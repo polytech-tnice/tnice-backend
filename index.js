@@ -32,7 +32,7 @@ io.on("connection", function(socket) {
     players.push(player1);
     players.push(player2);
     const createdGame = new Game(params.game_name, players);
-    createdGame.setGameState(GameState.IN_PROGRESS);
+    createdGame.setGameState(GameState.INTERUPTED);
     createdGame.setActionManager(new ActionManager());
     games.push(createdGame);
     console.log(`Nombre de parties: ${games.length}`)
@@ -68,22 +68,21 @@ io.on("connection", function(socket) {
 
   // Read actions sent by clients
   socket.on("addWind", function(obj) {
-    console.log(`Received addWindEvent from client!`)
     const params = JSON.parse(obj);
     const actionProvided = new WindAction(ActionType.WIND, params.speed, params.direction);
     let isAdded = false;
     games.forEach((game) => {
       if (game.getName() === params.game_name) {
-        console.log('Game found, add the action with action manager!')
-        game.getActionManager().addAction(actionProvided);
-        console.log(`Nombre d'actions pour la game ${game.getName()}: ${game.getActionManager().getActions().length}`)
-        isAdded = true;
+        if (game.getGameState() === GameState.INTERUPTED) {
+          game.getActionManager().addAction(actionProvided);
+          isAdded = true;
+        }
       }
     });
     if (isAdded) {
-      console.log('Action added!')
+      socket.emit('success', actionProvided)
     } else {
-      console.log('Error')
+      socket.emit('fail')
     }
   })
 });
