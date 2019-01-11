@@ -4,6 +4,7 @@
   "description": "",
   "dependencies": {
     "express": "^4.16.4",
+    "nodemon": "^1.18.9",
     "socket.io": "^2.2.0"
   }
 }

@@ -8,5 +8,5 @@ Backend of the T-Nice project
 npm install
 
 # launch the serv at localhost:3000
-node index.js
+nodemon index.js or node index.js
 ```
