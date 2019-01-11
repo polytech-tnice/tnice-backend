@@ -1,14 +1,18 @@
 var app = require("express")();
 var http = require("http").Server(app);
 var io = require("socket.io")(http, { pingInterval: 500 });
-var ActionType = require('./_models/action-type')
-var WindAction = require('./_models/action')
-var ActionManager = require('./utils/action-manager')
-var Player = require('./_models/player')
-var Game = require('./_models/game')
-var GameState = require('./_models/game-state')
+var ActionType = require("./_models/action-type");
+var WindAction = require("./_models/action");
+var ActionManager = require("./utils/action-manager");
+var Player = require("./_models/player");
+var Game = require("./_models/game");
+var GameState = require("./_models/game-state");
+var Client = require("./_models/client");
+var ClientName = require("./_models/client-name");
+var ClientManager = require("./utils/client-manager");
 
 //const actionManager = new ActionManager();
+const clientManager = new ClientManager();
 const games = [];
 
 app.get("/", function(req, res) {
@@ -17,6 +21,15 @@ app.get("/", function(req, res) {
 
 io.on("connection", function(socket) {
   console.log("User connected", socket.client.id);
+  socket.on("authentification", function(params) {
+    const authParams = JSON.parse(params);
+    console.log("Authentification : ", authParams);
+    const clients = clientManager.getClients();
+    if (clients.find(aClient => aClient.id === socket.client.id)) return;
+
+    const client = new Client(socket.client.id, authParams);
+    clientManager.addClient(client);
+  });
   socket.on("chat message", function(obj) {
     console.log(obj);
     const lobj = JSON.parse(obj);
@@ -35,17 +48,20 @@ io.on("connection", function(socket) {
     createdGame.setGameState(GameState.INTERUPTED);
     createdGame.setActionManager(new ActionManager());
     games.push(createdGame);
-    console.log(`Nombre de parties: ${games.length}`)
+    console.log(`Nombre de parties: ${games.length}`);
     socket.emit("initGameReceived");
   });
-
 
   // Read actions sent by clients
   socket.on("addWind", function(obj) {
     const params = JSON.parse(obj);
-    const actionProvided = new WindAction(ActionType.WIND, params.speed, params.direction);
+    const actionProvided = new WindAction(
+      ActionType.WIND,
+      params.speed,
+      params.direction
+    );
     let isAdded = false;
-    games.forEach((game) => {
+    games.forEach(game => {
       if (game.getName() === params.game_name) {
         if (game.getGameState() === GameState.INTERUPTED) {
           game.getActionManager().addAction(actionProvided);
@@ -54,11 +70,15 @@ io.on("connection", function(socket) {
       }
     });
     if (isAdded) {
-      socket.emit('success', actionProvided)
+      socket.emit("success", actionProvided);
     } else {
-      socket.emit('fail')
+      socket.emit("fail");
     }
-  })
+  });
+
+  socket.on("disconnect", function() {
+    clientManager.removeClient(socket.client.id);
+  });
 });
 
 http.listen(3000, function() {
