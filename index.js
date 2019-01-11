@@ -39,6 +39,32 @@ io.on("connection", function(socket) {
     socket.emit("initGameReceived");
   });
 
+  socket.on("endGame", function(obj) {
+    console.log(`End of the game`)
+    const params = JSON.parse(obj);
+
+    games.forEach((game) => {
+      if (game.getName() === params.game_name) {
+        game.playerOneScore = params.player1_score;
+        game.playerTwoScore = params.player2_score;
+      }
+    });
+    socket.emit("endGameReceived");
+  });
+
+  socket.on("updateScore", function(obj) {
+    console.log(`Update score`)
+    const params = JSON.parse(obj);
+
+    games.forEach((game) => {
+      if (game.getName() === params.game_name) {
+        game.playerOneScore = params.player1_score;
+        game.playerTwoScore = params.player2_score;
+      }
+    });
+    socket.emit("updateScoreReceived");
+  });
+
 
   // Read actions sent by clients
   socket.on("addWind", function(obj) {

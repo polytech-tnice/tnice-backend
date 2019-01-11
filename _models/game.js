@@ -8,6 +8,8 @@ module.exports = class Game {
     constructor(name, players) {
         this.name = name;
         this.players = players;
+        this.playerOneScore = 0;
+        this.playerTwoScore = 0;
     }
 
     setActionManager(actionManager) {
