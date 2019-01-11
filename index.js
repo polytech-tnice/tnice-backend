@@ -22,7 +22,7 @@ app.get("/", function(req, res) {
 io.on("connection", function(socket) {
   console.log("User connected", socket.client.id);
   socket.on("authentification", function(params) {
-    const authParams = JSON.parse(params);
+    const authParams = params;
     console.log("Authentification : ", authParams);
     const clients = clientManager.getClients();
     if (clients.find(aClient => aClient.id === socket.client.id)) return;
