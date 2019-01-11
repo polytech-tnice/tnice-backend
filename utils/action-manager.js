@@ -14,7 +14,6 @@ module.exports = class ActionManager {
     }
 
     addAction(action) {
-        console.log('DEBUG - Action pushed in action manager\'s list!')
         this.actions.push(action);
     }
 

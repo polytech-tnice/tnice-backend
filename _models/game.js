@@ -18,6 +18,10 @@ module.exports = class Game {
         this.state = state;
     }
 
+    getGameState() {
+        return this.state;
+    }
+
     getActionManager() {
         return this.actionManager;
     }
