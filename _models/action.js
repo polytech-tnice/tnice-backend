@@ -1,20 +1,28 @@
-module.exports = class Action {
+class Action {
 
     /** 
      * @param {enum} actionType 
-     * @param {any} parameters 
      */
-    constructor(actionType, parameters) {
+    constructor(actionType) {
         this.actionType = actionType;
-        this.parameters = parameters;
     }
 
     getActionType() {
         return this.actionType;
     }
 
-    getParameters() {
-        return this.parameters;
-    }
+}
 
+module.exports = class WindAction extends Action {
+    constructor(actionType, speed, direction) {
+        super(actionType);
+        this.speed = speed;
+        this.direction = direction;
+    }
+    getSpeed() {
+        return this.speed;
+    }
+    getDirection() {
+        return this.direction;
+    }
 }

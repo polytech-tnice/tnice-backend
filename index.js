@@ -2,10 +2,14 @@ var app = require("express")();
 var http = require("http").Server(app);
 var io = require("socket.io")(http, { pingInterval: 500 });
 var ActionType = require('./_models/action-type')
-var Action = require('./_models/action')
+var WindAction = require('./_models/action')
 var ActionManager = require('./utils/action-manager')
+var Player = require('./_models/player')
+var Game = require('./_models/game')
+var GameState = require('./_models/game-state')
 
-const actionManager = new ActionManager();
+//const actionManager = new ActionManager();
+const games = [];
 
 app.get("/", function(req, res) {
   res.sendFile(__dirname + "/index.html");
@@ -21,12 +25,17 @@ io.on("connection", function(socket) {
   });
 
   socket.on("initGame", function(obj) {
-    console.log(obj);
     const params = JSON.parse(obj);
-    console.log(`[${socket.client.id}] Init game with params`);
-    console.log(`[${socket.client.id}] Game name : ${params.game_name}`);
-    console.log(`[${socket.client.id}] Player 1 name : ${params.player1_name}`);
-    console.log(`[${socket.client.id}] Player 2 name : ${params.player2_name}`);
+    const players = [];
+    const player1 = new Player(params.player1_name);
+    const player2 = new Player(params.player2_name);
+    players.push(player1);
+    players.push(player2);
+    const createdGame = new Game(params.game_name, players);
+    createdGame.setGameState(GameState.IN_PROGRESS);
+    createdGame.setActionManager(new ActionManager());
+    games.push(createdGame);
+    console.log(`Nombre de parties: ${games.length}`)
     socket.emit("initGameReceived");
   });
 
@@ -34,10 +43,22 @@ io.on("connection", function(socket) {
   // Read actions sent by clients
   socket.on("addWind", function(obj) {
     console.log(`Received addWindEvent from client!`)
-    const actionProvided = new Action(ActionType.WIND, obj);
-    actionManager.addAction(actionProvided);
-    console.log(`Nombre d'actions: ${actionManager.getActions().length}`)
-    socket.emit('actionAdded', actionProvided)
+    const params = JSON.parse(obj);
+    const actionProvided = new WindAction(ActionType.WIND, params.speed, params.direction);
+    let isAdded = false;
+    games.forEach((game) => {
+      if (game.getName() === params.game_name) {
+        console.log('Game found, add the action with action manager!')
+        game.getActionManager().addAction(actionProvided);
+        console.log(`Nombre d'actions pour la game ${game.getName()}: ${game.getActionManager().getActions().length}`)
+        isAdded = true;
+      }
+    });
+    if (isAdded) {
+      console.log('Action added!')
+    } else {
+      console.log('Error')
+    }
   })
 });
 
