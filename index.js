@@ -1,15 +1,16 @@
 var app = require("express")();
 var http = require("http").Server(app);
-var io = require("socket.io")(http);
+var io = require("socket.io")(http, { pingInterval: 500 });
 
 app.get("/", function(req, res) {
   res.sendFile(__dirname + "/index.html");
 });
 
 io.on("connection", function(socket) {
-  socket.on("chat message", function(obj) {
-    console.log("Client : ", obj.device);
-    io.emit("chat message", obj.msg);
+  console.log("User connected", socket.client.id);
+  socket.on("chat message", function(msg, device) {
+    console.log(`[${socket.client.id}] Client ${device} : ${msg}`);
+    io.emit("chat message", msg);
   });
 });
 
