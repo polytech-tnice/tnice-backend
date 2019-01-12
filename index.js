@@ -1,6 +1,6 @@
 var app = require("express")();
 var http = require("http").Server(app);
-var io = require("socket.io")(http, { pingInterval: 500 });
+var io = require("socket.io")(http, { transports: ["polling", "websocket"]});
 var ActionType = require("./_models/action-type");
 var WindAction = require("./_models/action");
 var ActionManager = require("./utils/action-manager");
@@ -34,7 +34,7 @@ io.on("connection", function(socket) {
     console.log(obj);
     const lobj = JSON.parse(obj);
     console.log(`[${socket.client.id}] Client ${lobj.device} : ${lobj.msg}`);
-    io.emit("chat message", lobj.msg);
+    io.emit("chat message", lobj);
   });
 
   socket.on("initGame", function(obj) {
