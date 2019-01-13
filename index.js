@@ -1,42 +1,77 @@
 var app = require("express")();
 var http = require("http").Server(app);
-var io = require("socket.io")(http, { pingInterval: 500 });
-var ActionType = require('./_models/action-type')
-var WindAction = require('./_models/action')
-var ActionManager = require('./utils/action-manager')
-var Player = require('./_models/player')
-var Game = require('./_models/game')
-var GameState = require('./_models/game-state')
+var io = require("socket.io")(http, { transports: ["polling", "websocket"]});
+var ActionType = require("./_models/action-type");
+var WindAction = require("./_models/action");
+var ActionManager = require("./utils/action-manager");
+var Player = require("./_models/player");
+var Game = require("./_models/game");
+var GameState = require("./_models/game-state");
+var Client = require("./_models/client");
+var ClientName = require("./_models/client-name");
+var ClientManager = require("./utils/client-manager");
 
-//const actionManager = new ActionManager();
+const clientManager = new ClientManager();
 const games = [];
+
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
 
 app.get("/", function(req, res) {
   res.sendFile(__dirname + "/index.html");
 });
 
+// Endpoint to have the list of games
+app.get("/api/games", (req, res) => {
+  console.log('Using api/games endpoint...');
+  res.send({games: games})
+});
+
 io.on("connection", function(socket) {
   console.log("User connected", socket.client.id);
+  socket.on("authentification", function(params) {
+    const authParams = params;
+    console.log("Authentification : ", authParams);
+    const clients = clientManager.getClients();
+    if (clients.find(aClient => aClient.id === socket.client.id)) return;
+
+    const client = new Client(socket.client.id, authParams);
+    clientManager.addClient(client);
+  });
   socket.on("chat message", function(obj) {
     console.log(obj);
     const lobj = JSON.parse(obj);
     console.log(`[${socket.client.id}] Client ${lobj.device} : ${lobj.msg}`);
-    io.emit("chat message", lobj.msg);
+    io.emit("chat message", lobj);
   });
 
+  // Event to initialize a new game by giving a name and players' name too
   socket.on("initGame", function(obj) {
     const params = JSON.parse(obj);
-    const players = [];
-    const player1 = new Player(params.player1_name);
-    const player2 = new Player(params.player2_name);
-    players.push(player1);
-    players.push(player2);
-    const createdGame = new Game(params.game_name, players);
-    createdGame.setGameState(GameState.INTERUPTED);
-    createdGame.setActionManager(new ActionManager());
-    games.push(createdGame);
-    console.log(`Nombre de parties: ${games.length}`)
-    socket.emit("initGameReceived");
+    let canCreateGame = true;
+    games.forEach((game) => {
+      if (game.getName() === params.game_name) canCreateGame = false;
+    });
+    if (canCreateGame) {
+      const players = [];
+      const player1 = new Player(params.player1_name);
+      const player2 = new Player(params.player2_name);
+      players.push(player1);
+      players.push(player2);
+      const createdGame = new Game(params.game_name, players);
+      createdGame.setGameState(GameState.IN_PROGRESS);
+      createdGame.setActionManager(new ActionManager());
+      games.push(createdGame);
+      // Emit an event to say that the game has been initialized correctly
+      socket.emit("initGameReceived");
+    } else {
+      // A game with the same name already exists
+      // TODO - send a proper event with ERROR CODE that can be used in front-end
+      socket.emit('fail')
+    }
   });
 
   socket.on("endGame", function(obj) {
