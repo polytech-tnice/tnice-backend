@@ -7,7 +7,10 @@ var ActionManager = require('./utils/action-manager')
 var Player = require('./_models/player')
 var Game = require('./_models/game')
 var GameState = require('./_models/game-state')
+var Client = require('./_models/client')
+var ClientManager = require('./utils/client-manager')
 
+const clientManager = new ClientManager();
 const games = [];
 
 app.get("/", function(req, res) {
@@ -16,6 +19,15 @@ app.get("/", function(req, res) {
 
 io.on("connection", function(socket) {
   console.log("User connected", socket.client.id);
+  socket.on("authentification", function(params) {
+    const authParams = params;
+    console.log("Authentification : ", authParams);
+    const clients = clientManager.getClients();
+    if (clients.find(aClient => aClient.id === socket.client.id)) return;
+
+    const client = new Client(socket.client.id, authParams);
+    clientManager.addClient(client);
+  });
   socket.on("chat message", function(obj) {
     console.log(obj);
     const lobj = JSON.parse(obj);
