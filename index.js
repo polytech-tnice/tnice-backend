@@ -18,6 +18,11 @@ app.get("/", function(req, res) {
   res.sendFile(__dirname + "/index.html");
 });
 
+app.get("/api/games", (req, res) => {
+  console.log('Using api/games endpoint...');
+  res.send({games: games})
+});
+
 io.on("connection", function(socket) {
   console.log("User connected", socket.client.id);
   socket.on("authentification", function(params) {
@@ -36,19 +41,36 @@ io.on("connection", function(socket) {
     io.emit("chat message", lobj);
   });
 
+  // Event to list the available games
+  socket.on('listGames', () => {
+    // Emit an event that has the list of games
+    socket.emit('sendGamesList', {games: games})
+  })
+
+  // Event to initialize a new game by giving a name and players' name too
   socket.on("initGame", function(obj) {
     const params = JSON.parse(obj);
-    const players = [];
-    const player1 = new Player(params.player1_name);
-    const player2 = new Player(params.player2_name);
-    players.push(player1);
-    players.push(player2);
-    const createdGame = new Game(params.game_name, players);
-    createdGame.setGameState(GameState.INTERUPTED);
-    createdGame.setActionManager(new ActionManager());
-    games.push(createdGame);
-    console.log(`Nombre de parties: ${games.length}`)
-    socket.emit("initGameReceived");
+    let canCreateGame = true;
+    games.forEach((game) => {
+      if (game.getName() === params.game_name) canCreateGame = false;
+    });
+    if (canCreateGame) {
+      const players = [];
+      const player1 = new Player(params.player1_name);
+      const player2 = new Player(params.player2_name);
+      players.push(player1);
+      players.push(player2);
+      const createdGame = new Game(params.game_name, players);
+      createdGame.setGameState(GameState.INTERUPTED);
+      createdGame.setActionManager(new ActionManager());
+      games.push(createdGame);
+      // Emit an event to say that the game has been initialized correctly
+      socket.emit("initGameReceived");
+    } else {
+      // A game with the same name already exists
+      // TODO - send a proper event with ERROR CODE that can be used in front-end
+      socket.emit('fail')
+    }
   });
 
 
