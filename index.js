@@ -14,10 +14,17 @@ var ClientManager = require("./utils/client-manager");
 const clientManager = new ClientManager();
 const games = [];
 
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
 app.get("/", function(req, res) {
   res.sendFile(__dirname + "/index.html");
 });
 
+// Endpoint to have the list of games
 app.get("/api/games", (req, res) => {
   console.log('Using api/games endpoint...');
   res.send({games: games})
@@ -41,12 +48,6 @@ io.on("connection", function(socket) {
     io.emit("chat message", lobj);
   });
 
-  // Event to list the available games
-  socket.on('listGames', () => {
-    // Emit an event that has the list of games
-    socket.emit('sendGamesList', {games: games})
-  })
-
   // Event to initialize a new game by giving a name and players' name too
   socket.on("initGame", function(obj) {
     const params = JSON.parse(obj);
@@ -61,7 +62,7 @@ io.on("connection", function(socket) {
       players.push(player1);
       players.push(player2);
       const createdGame = new Game(params.game_name, players);
-      createdGame.setGameState(GameState.INTERUPTED);
+      createdGame.setGameState(GameState.IN_PROGRESS);
       createdGame.setActionManager(new ActionManager());
       games.push(createdGame);
       // Emit an event to say that the game has been initialized correctly
