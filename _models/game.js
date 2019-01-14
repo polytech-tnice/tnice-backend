@@ -9,6 +9,8 @@ module.exports = class Game {
         this.name = name;
         this.players = players;
         this.connectedClientIDs = [];
+        this.playerOneScore = 0;
+        this.playerTwoScore = 0;
     }
 
     setActionManager(actionManager) {

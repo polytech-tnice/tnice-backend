@@ -94,6 +94,44 @@ io.on("connection", function(socket) {
     socket.emit('joinGameFailEvent');
   });
 
+  socket.on("endGame", function(obj) {
+    console.log(`End of the game`)
+    const params = JSON.parse(obj);
+    let isAdded = false;
+    games.forEach((game) => {
+      if (game.getName() === params.game_name) {
+        game.playerOneScore = params.player1_score;
+        game.playerTwoScore = params.player2_score;
+        game.setGameState(GameState.FINISHED);
+        isAdded = true;
+      }
+    });
+    if (isAdded) {
+      socket.emit("endGameReceived");
+    } else {
+      socket.emit('fail')
+    }
+  });
+
+  socket.on("updateScore", function(obj) {
+    console.log(`Update score`)
+    const params = JSON.parse(obj);
+    let isAdded = false;
+    games.forEach((game) => {
+      if (game.getName() === params.game_name) {
+        game.playerOneScore = params.player1_score;
+        game.playerTwoScore = params.player2_score;
+        isAdded = true;
+      }
+    });
+    if (isAdded) {
+      socket.emit("updateScoreReceived");
+    } else {
+      socket.emit('fail')
+    }
+    
+  });
+
 
   // Read actions sent by clients
   socket.on("addWind", function(obj) {
