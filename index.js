@@ -74,6 +74,26 @@ io.on("connection", function(socket) {
     }
   });
 
+  /**
+   * Quand un client demande de rejoindre une partie il doit envoyer un JSON object qui a au moins un 
+   * champ 'name' qui contient le nom de la partie qu'il veut rejoindre.
+   * Si le nom est valide (i.e. la partie existe), on ajoute l'ID du client dans un tableau propre a 
+   * la partie qu'il veut rejoindre.
+   * @Events
+   * 1. joinGameSuccessEvent - le client a pu rejoindre la partie - on renvoie les infos sur la partie
+   * 2. joinGameFailEvent - le client n'a pas pu rejoindre la partie
+   */
+  socket.on('joinGameEvent', (obj) => {
+    const gameName = obj.name;
+    games.forEach((game) => {
+      if (game.getName() === gameName) {
+        game.getConnectedClientIDs().push(socket.client.id);
+        socket.emit('joinGameSuccessEvent', obj);
+      }
+    });
+    socket.emit('joinGameFailEvent');
+  });
+
 
   // Read actions sent by clients
   socket.on("addWind", function(obj) {

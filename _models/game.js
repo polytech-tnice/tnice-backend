@@ -8,6 +8,7 @@ module.exports = class Game {
     constructor(name, players) {
         this.name = name;
         this.players = players;
+        this.connectedClientIDs = [];
     }
 
     setActionManager(actionManager) {
@@ -32,6 +33,10 @@ module.exports = class Game {
 
     getPlayers() {
         return this.players;
+    }
+
+    getConnectedClientIDs() {
+        return this.connectedClientIDs;
     }
 
 }
