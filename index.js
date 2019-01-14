@@ -62,7 +62,7 @@ io.on("connection", function(socket) {
       players.push(player1);
       players.push(player2);
       const createdGame = new Game(params.game_name, players);
-      createdGame.setGameState(GameState.IN_PROGRESS);
+      createdGame.setGameState(GameState.INTERUPTED);
       createdGame.setActionManager(new ActionManager());
       games.push(createdGame);
       // Emit an event to say that the game has been initialized correctly
@@ -133,25 +133,28 @@ io.on("connection", function(socket) {
   });
 
 
-  // Read actions sent by clients
-  socket.on("addWind", function(obj) {
-    const params = JSON.parse(obj);
-    const actionProvided = new WindAction(ActionType.WIND, params.speed, params.direction);
-    let isAdded = false;
+  /**
+   * Quand un client envoie un event 'addWindEvent' au serveur, il doit donner en parametre un JSON object.
+   * Le JSON object doit contenir au moins le nom de la partie (@gameName), la vitesse du vent (@speed) et
+   * la direction du vent (@direction).
+   * Ensuite on fait un nouvel objet WindAction, qui est une action et sera ajoutee a la liste des actions
+   * pour la game en question (si elle existe).
+   * @Events
+   * 1. actionAddedSuccessfully - pour dire que l'action est bien prise en compte
+   */
+  socket.on("addWindEvent", function(obj) {
+    console.log(obj);
+    const actionProvided = new WindAction(ActionType.WIND, obj.speed, obj.direction);
     games.forEach((game) => {
-      if (game.getName() === params.game_name) {
+      if (game.getName() === obj.gameName) {
         if (game.getGameState() === GameState.INTERUPTED) {
           game.getActionManager().addAction(actionProvided);
-          isAdded = true;
+          socket.emit('actionAddedSuccessfully', actionProvided);
         }
       }
     });
-    if (isAdded) {
-      socket.emit('success', actionProvided)
-    } else {
-      socket.emit('fail')
-    }
-  })
+  });
+
 });
 
 http.listen(3000, function() {

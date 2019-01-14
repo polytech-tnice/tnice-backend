@@ -18,11 +18,11 @@ module.exports = class Game {
     }
 
     setGameState(state) {
-        this.state = state;
+        this.status = state;
     }
 
     getGameState() {
-        return this.state;
+        return this.status;
     }
 
     getActionManager() {
