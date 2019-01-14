@@ -1,4 +1,5 @@
 module.exports = ActionTypeEnum = Object.freeze({
-    "UNKNOWN": 1,
-    "WIND": 2
+    "WIND": 1,
+    "UNKNOWN": 2
+    
 })

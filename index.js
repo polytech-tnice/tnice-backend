@@ -13,6 +13,7 @@ var ClientManager = require("./utils/client-manager");
 
 const clientManager = new ClientManager();
 const games = [];
+const sockets = [];
 
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -31,6 +32,9 @@ app.get("/api/games", (req, res) => {
 });
 
 io.on("connection", function(socket) {
+  console.log(`Le nombre de sockets dans le tableau (avant): ${sockets.length}`)
+  sockets.push(socket);
+  console.log(`Le nombre de sockets dans le tableau (apres): ${sockets.length}`)
   console.log("User connected", socket.client.id);
   socket.on("authentification", function(params) {
     const authParams = params;
@@ -149,7 +153,11 @@ io.on("connection", function(socket) {
       if (game.getName() === obj.gameName) {
         if (game.getGameState() === GameState.INTERUPTED) {
           game.getActionManager().addAction(actionProvided);
-          socket.emit('actionAddedSuccessfully', actionProvided);
+          // Emit the event to all the sockets connected
+          // TODO - filtrer pour envoyer seulement aux clients qui en ont vraiment besoin...
+          sockets.forEach(s => {
+            s.emit('actionAddedSuccessfully', {action: actionProvided, creator: socket.client.id});
+          });
         }
       }
     });
