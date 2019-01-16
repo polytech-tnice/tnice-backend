@@ -1,6 +1,6 @@
 var app = require("express")();
 var http = require("http").Server(app);
-var io = require("socket.io")(http, { transports: ["polling", "websocket"]});
+var io = require("socket.io")(http, { transports: ["polling", "websocket"] });
 var ActionType = require("./_models/action-type");
 var WindAction = require("./_models/action");
 var ActionManager = require("./utils/action-manager");
@@ -15,67 +15,73 @@ const clientManager = new ClientManager();
 const games = [];
 const sockets = [];
 
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
 });
 
-app.get("/", function(req, res) {
+app.get("/", function (req, res) {
   res.sendFile(__dirname + "/index.html");
 });
 
 // Endpoint to have the list of games
 app.get("/api/games", (req, res) => {
   console.log('Using api/games endpoint...');
-  res.send({games: games})
+  res.send({ games: games })
 });
 
-io.on("connection", function(socket) {
+io.on("connection", function (socket) {
   console.log(`Le nombre de sockets dans le tableau (avant): ${sockets.length}`)
   sockets.push(socket);
   console.log(`Le nombre de sockets dans le tableau (apres): ${sockets.length}`)
   console.log("User connected", socket.client.id);
-  socket.on("authentification", function(params) {
-    const authParams = params;
+
+  // Event to register the client in the server with a name
+  // Value of the name must be in ClientName enum
+  socket.on("authentication", function (params) {
+    const authParams = JSON.parse(params);
     console.log("Authentification : ", authParams);
     const clients = clientManager.getClients();
-    if (clients.find(aClient => aClient.id === socket.client.id)) return;
+    if (clients.find(aClient => aClient.id === socket.client.id)) {
+      socket.emit('clientAlreadyRegistered');
+      return;
+    }
+    if (!authParams.name || Object.values(ClientName).indexOf(authParams.name) === -1) {
+      socket.emit('unknownName')
+      return;
+    }
 
-    const client = new Client(socket.client.id, authParams);
+    const client = new Client(socket, authParams.name);
     clientManager.addClient(client);
-  });
-  socket.on("chat message", function(obj) {
-    console.log(obj);
-    const lobj = JSON.parse(obj);
-    console.log(`[${socket.client.id}] Client ${lobj.device} : ${lobj.msg}`);
-    io.emit("chat message", lobj);
   });
 
   // Event to initialize a new game by giving a name and players' name too
-  socket.on("initGame", function(obj) {
+  socket.on("initGame", function (obj) {
     const params = JSON.parse(obj);
     let canCreateGame = true;
     games.forEach((game) => {
       if (game.getName() === params.game_name) canCreateGame = false;
     });
-    if (canCreateGame) {
-      const players = [];
-      const player1 = new Player(params.player1_name);
-      const player2 = new Player(params.player2_name);
-      players.push(player1);
-      players.push(player2);
-      const createdGame = new Game(params.game_name, players);
-      createdGame.setGameState(GameState.INTERUPTED);
-      createdGame.setActionManager(new ActionManager());
-      games.push(createdGame);
-      // Emit an event to say that the game has been initialized correctly
-      socket.emit("initGameReceived");
-    } else {
+    if (!canCreateGame) {
       // A game with the same name already exists
       // TODO - send a proper event with ERROR CODE that can be used in front-end
-      socket.emit('fail')
+      socket.emit('fail', JSON.stringify({ desc: 'Une partie existe déjà avec ce nom' }))
+      return;
     }
+
+
+    const players = [];
+    const player1 = new Player(params.player1_name);
+    const player2 = new Player(params.player2_name);
+    players.push(player1);
+    players.push(player2);
+    const createdGame = new Game(params.game_name, players);
+    createdGame.setGameState(GameState.INTERUPTED);
+    createdGame.setActionManager(new ActionManager());
+    games.push(createdGame);
+    // Emit an event to say that the game has been initialized correctly
+    socket.emit("initGameReceived");
   });
 
   /**
@@ -88,17 +94,18 @@ io.on("connection", function(socket) {
    * 2. joinGameFailEvent - le client n'a pas pu rejoindre la partie
    */
   socket.on('joinGameEvent', (obj) => {
-    const gameName = obj.name;
+    const params = JSON.parse(obj);
+    const gameName = params.name;
     games.forEach((game) => {
       if (game.getName() === gameName) {
         game.getConnectedClientIDs().push(socket.client.id);
-        socket.emit('joinGameSuccessEvent', obj);
+        socket.emit('joinGameSuccessEvent', JSON.parse(params));
       }
     });
     socket.emit('joinGameFailEvent');
   });
 
-  socket.on("endGame", function(obj) {
+  socket.on("endGame", function (obj) {
     console.log(`End of the game`)
     const params = JSON.parse(obj);
     let isAdded = false;
@@ -117,7 +124,7 @@ io.on("connection", function(socket) {
     }
   });
 
-  socket.on("updateScore", function(obj) {
+  socket.on("updateScore", function (obj) {
     console.log(`Update score`)
     const params = JSON.parse(obj);
     let isAdded = false;
@@ -133,7 +140,7 @@ io.on("connection", function(socket) {
     } else {
       socket.emit('fail')
     }
-    
+
   });
 
 
@@ -146,25 +153,32 @@ io.on("connection", function(socket) {
    * @Events
    * 1. actionAddedSuccessfully - pour dire que l'action est bien prise en compte
    */
-  socket.on("addWindEvent", function(obj) {
+  socket.on("addWindEvent", function (obj) {
     console.log(obj);
     const actionProvided = new WindAction(ActionType.WIND, obj.speed, obj.direction);
     games.forEach((game) => {
-      if (game.getName() === obj.gameName) {
-        if (game.getGameState() === GameState.INTERUPTED) {
-          game.getActionManager().addAction(actionProvided);
-          // Emit the event to all the sockets connected
-          // TODO - filtrer pour envoyer seulement aux clients qui en ont vraiment besoin...
-          sockets.forEach(s => {
-            s.emit('actionAddedSuccessfully', {action: actionProvided, creator: socket.client.id});
-          });
-        }
+      if (game.getName() !== obj.gameName) return;
+
+      if (game.getGameState() === GameState.INTERUPTED) {
+        game.getActionManager().addAction(actionProvided);
+        // Emit the event to all the sockets connected
+        clientManager.getClientsOfType(ClientName.GAME).forEach(client => {
+          client.socket.emit('actionAddedSuccessfully', JSON.stringify({ action: actionProvided, creator: socket.client.id }));
+        })
+        // sockets.forEach(s => {
+        //   s.emit('actionAddedSuccessfully', {action: actionProvided, creator: socket.client.id});
+        // });
       }
     });
   });
 
+  // Event quand la socket se déconnecte du serveur
+  socket.on('disconnect', function () {
+    clientManager.removeClient(socket.client.id)
+  });
+
 });
 
-http.listen(3000, function() {
+http.listen(3000, function () {
   console.log("listening on *:3000");
 });
