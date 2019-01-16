@@ -154,6 +154,7 @@ io.on("connection", function (socket) {
    * 1. actionAddedSuccessfully - pour dire que l'action est bien prise en compte
    */
   socket.on("addWindEvent", function (obj) {
+
     console.log(obj);
     const actionProvided = new WindAction(ActionType.WIND, obj.speed, obj.direction);
     games.forEach((game) => {
@@ -162,12 +163,13 @@ io.on("connection", function (socket) {
       if (game.getGameState() === GameState.INTERUPTED) {
         game.getActionManager().addAction(actionProvided);
         // Emit the event to all the sockets connected
-        clientManager.getClientsOfType(ClientName.GAME).forEach(client => {
-          client.socket.emit('actionAddedSuccessfully', JSON.stringify({ action: actionProvided, creator: socket.client.id }));
+        clientManager.getClientsOfType(ClientName.MOBILEAPP).forEach(client => {
+          client.socket.emit('actionAddedSuccessfully', { action: actionProvided, creator: socket.client.id });
         })
-        // sockets.forEach(s => {
-        //   s.emit('actionAddedSuccessfully', {action: actionProvided, creator: socket.client.id});
-        // });
+
+        clientManager.getClientsOfType(ClientName.GAME).forEach(client => {
+          client.socket.emit('actionEvent', actionProvided.getJSON())
+        })
       }
     });
   });
