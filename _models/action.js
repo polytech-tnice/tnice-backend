@@ -25,4 +25,12 @@ module.exports = class WindAction extends Action {
     getDirection() {
         return this.direction;
     }
+
+    getJSON() {
+        return JSON.stringify({
+            actionType: this.actionType,
+            speed: this.speed,
+            direction: this.direction
+        })
+    }
 }
