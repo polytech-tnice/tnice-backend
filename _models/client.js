@@ -1,16 +1,21 @@
 module.exports = class Client {
   /**
    *
-   * @param {string} socketId
+   * @param {SocketIO} socket
    * @param {enum} clientName
    */
-  constructor(socketId, clientName) {
-    this.id = socketId;
+  constructor(socket, clientName) {
+    this.id = socket.client.id;
+    this.socket = socket;
     this.name = clientName;
   }
 
-  getClientId() {
+  getId() {
     return this.id;
+  }
+
+  getSocket() {
+    return this.socket;
   }
 
   getName() {
