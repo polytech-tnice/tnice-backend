@@ -7,9 +7,13 @@ module.exports = class ClientManager {
     return this.clients;
   }
 
+  getClientsOfType(type) {
+    return this.clients.filter(aClient => aClient.name === type);
+  }
+
   clearClients() {
     if (this.clients.length === 0) return;
-    this.clients.length = 0;
+    this.clients = [];
   }
 
   addClient(client) {
