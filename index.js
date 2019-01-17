@@ -64,7 +64,7 @@ io.on("connection", function (socket) {
     if (!canCreateGame) {
       // A game with the same name already exists
       // TODO - send a proper event with ERROR CODE that can be used in front-end
-      socket.emit('fail', JSON.stringify({ desc: 'Une partie existe déjà avec ce nom' }))
+      socket.emit('fail', { desc: 'Une partie existe déjà avec ce nom' })
       return;
     }
 
@@ -96,7 +96,7 @@ io.on("connection", function (socket) {
     games.forEach((game) => {
       if (game.getName() === gameName) {
         game.getConnectedClientIDs().push(socket.client.id);
-        socket.emit('joinGameSuccessEvent', JSON.parse(params));
+        socket.emit('joinGameSuccessEvent', params);
       }
     });
     socket.emit('joinGameFailEvent');
@@ -163,7 +163,7 @@ io.on("connection", function (socket) {
         })
 
         clientManager.getClientsOfType(ClientName.GAME).forEach(client => {
-          client.socket.emit('actionEvent', actionProvided.getJSON())
+          client.socket.emit('actionEvent', actionProvided.getObject())
         })
       }
     });
