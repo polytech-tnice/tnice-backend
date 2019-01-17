@@ -28,7 +28,7 @@ First of all, if your client is correctly configured with socket.io, you will re
 `connect` if you are connected to the server. 
 
 ```js
-socket.on('connected', function() {
+socket.on('connect', function() {
   console.log("I'm connected !")
 })
 ```
