@@ -39,8 +39,7 @@ io.on("connection", function (socket) {
 
   // Event to register the client in the server with a name
   // Value of the name must be in ClientName enum
-  socket.on("authentication", function (params) {
-    const authParams = JSON.parse(params);
+  socket.on("authentication", function (authParams) {
     console.log("Authentification : ", authParams);
     const clients = clientManager.getClients();
     if (clients.find(aClient => aClient.id === socket.client.id)) {
@@ -57,8 +56,7 @@ io.on("connection", function (socket) {
   });
 
   // Event to initialize a new game by giving a name and players' name too
-  socket.on("initGame", function (obj) {
-    const params = JSON.parse(obj);
+  socket.on("initGame", function (params) {
     let canCreateGame = true;
     games.forEach((game) => {
       if (game.getName() === params.game_name) canCreateGame = false;
@@ -93,8 +91,7 @@ io.on("connection", function (socket) {
    * 1. joinGameSuccessEvent - le client a pu rejoindre la partie - on renvoie les infos sur la partie
    * 2. joinGameFailEvent - le client n'a pas pu rejoindre la partie
    */
-  socket.on('joinGameEvent', (obj) => {
-    const params = JSON.parse(obj);
+  socket.on('joinGameEvent', (params) => {
     const gameName = params.name;
     games.forEach((game) => {
       if (game.getName() === gameName) {
@@ -105,9 +102,8 @@ io.on("connection", function (socket) {
     socket.emit('joinGameFailEvent');
   });
 
-  socket.on("endGame", function (obj) {
+  socket.on("endGame", function (params) {
     console.log(`End of the game`)
-    const params = JSON.parse(obj);
     let isAdded = false;
     games.forEach((game) => {
       if (game.getName() === params.game_name) {
@@ -124,9 +120,8 @@ io.on("connection", function (socket) {
     }
   });
 
-  socket.on("updateScore", function (obj) {
+  socket.on("updateScore", function (params) {
     console.log(`Update score`)
-    const params = JSON.parse(obj);
     let isAdded = false;
     games.forEach((game) => {
       if (game.getName() === params.game_name) {
