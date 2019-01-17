@@ -22,10 +22,10 @@ Then you will be able to listen events from the server with `socket.on` and send
 ## Basic T-Nice workflow
 (All the codes shown here will be in `javascript`)
 
-### Event connected
+### Event connect
 
 First of all, if your client is correctly configured with socket.io, you will received the event 
-`connected` if you are connected to the server. 
+`connect` if you are connected to the server. 
 
 ```js
 socket.on('connected', function() {
