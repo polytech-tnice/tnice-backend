@@ -80,6 +80,7 @@ io.on("connection", function (socket) {
     games.push(createdGame);
     // Emit an event to say that the game has been initialized correctly
     socket.emit("initGameReceived");
+    io.emit("initGame", createdGame);
   });
 
   /**
