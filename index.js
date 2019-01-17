@@ -116,6 +116,7 @@ io.on("connection", function (socket) {
     });
     if (isAdded) {
       socket.emit("endGameReceived");
+      io.emit("endGame", params);
     } else {
       socket.emit('fail')
     }
@@ -133,6 +134,7 @@ io.on("connection", function (socket) {
     });
     if (isAdded) {
       socket.emit("updateScoreReceived");
+      io.emit("updateScore", params);
     } else {
       socket.emit('fail')
     }
