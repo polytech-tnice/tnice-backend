@@ -40,11 +40,11 @@ io.on("connection", function (socket) {
   /**
    * Dès qu'un client est connecté au serveur il doit s'authentifier auprès de lui
    * authentification attend un objet en paramètre `authParams` avec les propriétés suivantes :
-   *    - name {string} : le nom du client (comprit entre mobileApp, webApp et game) 
+   *    - `name` {string} : le nom du client (comprit entre `mobileApp`, `webApp` et `game`) 
    * Si le nom est valide, on ajoute ce client à la liste des clients authentifiés
    * @Events
-   *    - clientAlreadyRegistered : le client a déjà été authentifié auparavant (évitons les doublons)
-   *    - unknowName : le paramètre 'name' renseigné est invalide
+   *    - `clientAlreadyRegistered` : le client a déjà été authentifié auparavant (évitons les doublons)
+   *    - `unknowName` : le paramètre 'name' renseigné est invalide
    */
   socket.on("authentication", function (authParams) {
     console.log("Authentification : ", authParams);
@@ -94,7 +94,6 @@ io.on("connection", function (socket) {
     players.push(player1);
     players.push(player2);
     const createdGame = new Game(gameParams.game_name, players);
-    createdGame.setGameState(GameState.INTERUPTED);
     createdGame.setActionManager(new ActionManager());
     games.push(createdGame);
     console.log(`Game created by: ${socket.client.id}`)
@@ -102,6 +101,48 @@ io.on("connection", function (socket) {
     socket.emit("initGameReceived");
     io.emit("initGame", createdGame);
   });
+
+  /**
+   * Le client `webApp` peut lancer la partie une fois qu'elle est crée
+   * l'évènement `launchGame` attend en paramètre un objet avec les propriétés suivantes :
+   *    - `name` : nom de la partie à lancer
+   * L'état de la partie est modifiée pour passer en `IN_PROGRESS`
+   * @Events
+   *    - `fail` : peut être envoyé quand la partie n'existe pas ou qu'elle est déjà lancée.
+   *                voir la description de l'erreur pour les détails
+   *    - `success` : envoyé au client `webApp` pour le notifier que la partie a bien été lancée
+   *    - `gameLaunched` : envoyé aux clients `game` pour le prévenir que la partie doit être lancée
+   */
+  socket.on('launchGame', (launchParams) => {
+    const gameName = launchParams.name;
+    let canUpdateGame = true;
+
+    const find = games.find(game => game.getName() === gameName);
+    if (!find) {
+      socket.emit('fail', { desc: "La partie n'existe pas" })
+      return;
+    }
+
+    games.forEach((game) => {
+      if (game.getName() === gameName && game.getGameState() === GameState.IN_PROGRESS) {
+        canCreateGame = false;
+        return;
+      }
+
+      if (game.getName() === gameName) {
+        game.setGameState(GameState.IN_PROGRESS);
+      }
+    });
+    if (!canUpdateGame) {
+      socket.emit('fail', { desc: 'Une partie est déjà en cours avec ce nom' })
+      return;
+    }
+
+    socket.emit('success', { desc: 'Partie correctement lancée' })
+    clientManager.getClientsOfType(ClientName.GAME).forEach(c => {
+      c.getSocket().emit('gameLaunched', { name: gameName });
+    })
+  })
 
   /**
    * Quand un client demande de rejoindre une partie il doit envoyer un JSON object qui a au moins un 
