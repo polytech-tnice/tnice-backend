@@ -126,7 +126,7 @@ io.on("connection", function (socket) {
     games.forEach((game) => {
       if (game.getName() === gameName && game.getGameState() === GameState.IN_PROGRESS) {
         canCreateGame = false;
-        break;
+        return;
       }
 
       if (game.getName() === gameName) {
