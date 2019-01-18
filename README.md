@@ -40,7 +40,7 @@ Then the server needs to know who the client is and is his type. This event take
 ```json
 // authentification event param
 {
-  "name": "mobileApp"
+  name: "mobileApp"
 }
 ```
 
@@ -62,9 +62,9 @@ To launch a T-nice game it is necessary to configure it in first place. It's the
 ```json
 // initGame param
 {
-  "game_name": "US Open Final",
-  "player1_name": "Federer",
-  "player2_name": "Tsonga"
+  game_name: "US Open Final",
+  player1_name: "Federer",
+  player2_name: "Tsonga"
 }
 ```
 
@@ -75,7 +75,7 @@ Otherwise the event `fail` will be send with a JSON object as param :
 ```json
 // fail event param
 {
-  "desc": "Error message"
+  desc: "Error message"
 }
 ```
 
@@ -86,7 +86,7 @@ When at least one game is saved in the server, a client can join it with the eve
 ```json
 // joinGameEvent param
 {
-  "name" : "Name of the game to join"
+  name : "Name of the game to join"
 }
 ```
 
@@ -99,9 +99,9 @@ The `endGame` event is used to be emitted by a `game` client to notify the serve
 ```json
 // endGame param
 {
-  "game_name" : "Name of the game that ended",
-  "player1_score" : "Score of player 1 at the end of the match",
-  "player2_score" : "Score of player 2 at the end of the match"
+  game_name : "Name of the game that ended",
+  player1_score : "Score of player 1 at the end of the match",
+  player2_score : "Score of player 2 at the end of the match"
 }
 ```
 
@@ -116,9 +116,9 @@ The `updateScore` is used to be emitted by a `game` client to notify the server 
 ```json
 // updateScore param
 {
-  "game_name": "Name of the game to update",
-  "player1_score" : "New score of player 1",
-  "player2_score" : "New score of player 2"
+  game_name: "Name of the game to update",
+  player1_score : "New score of player 1",
+  player2_score : "New score of player 2"
 }
 ```
 
@@ -133,9 +133,9 @@ The `addWindEvent` is used to be emitted by `mobileApp` clients to disrupt the g
 ```json
 // addWindEvent param
 {
-  "gameName": "Name of the game to disrupt",
-  "speed": "Speed of the wind",
-  "direction": "Direction of the wind (North, South, East or West)"
+  gameName: "Name of the game to disrupt",
+  speed: "Speed of the wind",
+  direction: "Direction of the wind (North, South, East or West)"
 }
 ```
 
@@ -146,9 +146,9 @@ Then all the clients of type `game` will received the event `actionEvent` with a
 ```json
 // actionEvent params
 {
-  "actionType" : 1,
-  "speed" : "Speed of the wind",
-  "direction": "Direction of the wind"
+  actionType : 1,
+  speed : "Speed of the wind",
+  direction: "Direction of the wind"
 }
 ```
 
