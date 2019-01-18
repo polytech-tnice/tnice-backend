@@ -32,9 +32,9 @@ app.get("/api/games", (req, res) => {
 });
 
 io.on("connection", function (socket) {
-  console.log(`Le nombre de sockets dans le tableau (avant): ${sockets.length}`)
+  /*console.log(`Le nombre de sockets dans le tableau (avant): ${sockets.length}`)
   sockets.push(socket);
-  console.log(`Le nombre de sockets dans le tableau (apres): ${sockets.length}`)
+  console.log(`Le nombre de sockets dans le tableau (apres): ${sockets.length}`)*/
   console.log("User connected", socket.client.id);
 
   // Event to register the client in the server with a name
@@ -78,6 +78,7 @@ io.on("connection", function (socket) {
     createdGame.setGameState(GameState.INTERUPTED);
     createdGame.setActionManager(new ActionManager());
     games.push(createdGame);
+    console.log(`Game created by: ${socket.client.id}`)
     // Emit an event to say that the game has been initialized correctly
     socket.emit("initGameReceived");
     io.emit("initGame", createdGame);
@@ -125,15 +126,17 @@ io.on("connection", function (socket) {
   socket.on("updateScore", function (params) {
     console.log(`Update score`)
     let isAdded = false;
+    let res;
     games.forEach((game) => {
       if (game.getName() === params.game_name) {
         game.playerOneScore = params.player1_score;
         game.playerTwoScore = params.player2_score;
+        res = game;
         isAdded = true;
       }
     });
     if (isAdded) {
-      socket.emit("updateScoreReceived");
+      socket.emit("updateScoreReceived", res);
       io.emit("updateScore", params);
     } else {
       socket.emit('fail')
@@ -149,7 +152,8 @@ io.on("connection", function (socket) {
    * Ensuite on fait un nouvel objet WindAction, qui est une action et sera ajoutee a la liste des actions
    * pour la game en question (si elle existe).
    * @Events
-   * 1. actionAddedSuccessfully - pour dire que l'action est bien prise en compte
+   * 1. actionAddedSuccessfully - pour dire que l'action est bien prise en compte a tous les clients
+   * 2. actionHasBeenAdded - pour indiquer au client qui a fait l'event que l'action est bien prise en compte
    */
   socket.on("addWindEvent", function (obj) {
 
@@ -163,8 +167,9 @@ io.on("connection", function (socket) {
         // Emit the event to all the sockets connected
         clientManager.getClientsOfType(ClientName.MOBILEAPP).forEach(client => {
           client.socket.emit('actionAddedSuccessfully', { action: actionProvided, creator: socket.client.id });
-        })
-
+        });
+        // Event to confirm the action has been added.
+        socket.emit('actionHasBeenAdded');
         clientManager.getClientsOfType(ClientName.GAME).forEach(client => {
           client.socket.emit('actionEvent', actionProvided.getObject())
         })
