@@ -1,0 +1,8 @@
+module.exports = ErrorCodesEnum = Object.freeze({
+  "CLIENT_ALREADY_REGISTERED": 1,
+  "CLIENT_NAME_UNKNOWN": 2,
+  "GAME_ALREADY_EXISTING": 3,
+  "GAME_NOT_EXISTING": 4,
+  "GAME_ALREADY_IN_PROGRESS": 5,
+  "CLIENT_ALREADY_IN_GAME": 6
+})
