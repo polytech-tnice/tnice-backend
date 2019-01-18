@@ -13,7 +13,6 @@ var ClientManager = require("./utils/client-manager");
 
 const clientManager = new ClientManager();
 const games = [];
-const sockets = [];
 
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -31,14 +30,22 @@ app.get("/api/games", (req, res) => {
   res.send({ games: games })
 });
 
+/**
+ * Quand un client se connecte au serveur
+ * @param socket - La socket correspondant au client qui vient de se connecter
+ */
 io.on("connection", function (socket) {
-  /*console.log(`Le nombre de sockets dans le tableau (avant): ${sockets.length}`)
-  sockets.push(socket);
-  console.log(`Le nombre de sockets dans le tableau (apres): ${sockets.length}`)*/
   console.log("User connected", socket.client.id);
 
-  // Event to register the client in the server with a name
-  // Value of the name must be in ClientName enum
+  /**
+   * Dès qu'un client est connecté au serveur il doit s'authentifier auprès de lui
+   * authentification attend un objet en paramètre `authParams` avec les propriétés suivantes :
+   *    - name {string} : le nom du client (comprit entre mobileApp, webApp et game) 
+   * Si le nom est valide, on ajoute ce client à la liste des clients authentifiés
+   * @Events
+   *    - clientAlreadyRegistered : le client a déjà été authentifié auparavant (évitons les doublons)
+   *    - unknowName : le paramètre 'name' renseigné est invalide
+   */
   socket.on("authentication", function (authParams) {
     console.log("Authentification : ", authParams);
     const clients = clientManager.getClients();
@@ -55,11 +62,23 @@ io.on("connection", function (socket) {
     clientManager.addClient(client);
   });
 
-  // Event to initialize a new game by giving a name and players' name too
-  socket.on("initGame", function (params) {
+  /**
+   * Le client `webApp` est le seul à pouvoir créer une partie de t-nice.
+   * L'évènement `initGame` attend un objet `gameParams` en paramètre avec les propriétés suivantes :
+   *    - `game_name` : le nom de la partie (doit être unique)
+   *    - `player1_name` : le nom du joueur 1 
+   *    - `player2_name` : le nom du joueur 2
+   * Si une partie avec ce nom n'a pas encore été crée, on l'ajoute à la liste des parties et on notifie 
+   * tous les clients que la partie a été crée.
+   * @Events
+   *    - `fail` : envoyé si la partie existe déjà
+   *    - `initGameReceived` : prévient le client `webApp` qui a initialisé la partie que l'opération s'est bien passé
+   *    - `initGame` : envoyé à tous les clients lorsque la partie a bien été crée
+   */
+  socket.on("initGame", function (gameParams) {
     let canCreateGame = true;
     games.forEach((game) => {
-      if (game.getName() === params.game_name) canCreateGame = false;
+      if (game.getName() === gameParams.game_name) canCreateGame = false;
     });
     if (!canCreateGame) {
       // A game with the same name already exists
@@ -70,11 +89,11 @@ io.on("connection", function (socket) {
 
 
     const players = [];
-    const player1 = new Player(params.player1_name);
-    const player2 = new Player(params.player2_name);
+    const player1 = new Player(gameParams.player1_name);
+    const player2 = new Player(gameParams.player2_name);
     players.push(player1);
     players.push(player2);
-    const createdGame = new Game(params.game_name, players);
+    const createdGame = new Game(gameParams.game_name, players);
     createdGame.setGameState(GameState.INTERUPTED);
     createdGame.setActionManager(new ActionManager());
     games.push(createdGame);
