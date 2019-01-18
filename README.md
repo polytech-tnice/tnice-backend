@@ -37,7 +37,7 @@ socket.on('connect', function() {
 
 Then the server needs to know who the client is and is his type. This event takes a JSON object as param like this:
 
-```json
+```js
 // authentification event param
 {
   name: "mobileApp"
@@ -59,7 +59,7 @@ Two events may be sent back to the client after authentification :
 
 To launch a T-nice game it is necessary to configure it in first place. It's the purpose of `initGame` event. The event takes a JSON object as param like this :
 
-```json
+```js
 // initGame param
 {
   game_name: "US Open Final",
@@ -72,7 +72,7 @@ If the initialization of the game is a success, the client will received the eve
 
 Otherwise the event `fail` will be send with a JSON object as param :
 
-```json
+```js
 // fail event param
 {
   desc: "Error message"
@@ -83,7 +83,7 @@ Otherwise the event `fail` will be send with a JSON object as param :
 
 When at least one game is saved in the server, a client can join it with the event `joinGameEvent` wich takes a JSON object as param :
 
-```json
+```js
 // joinGameEvent param
 {
   name : "Name of the game to join"
@@ -96,7 +96,7 @@ If the name given doesn't exists or an error occured in the server, the server w
 
 The `endGame` event is used to be emitted by a `game` client to notify the server and the others clients than a game is over. The event takes a JSON Object as param : 
 
-```json
+```js
 // endGame param
 {
   game_name : "Name of the game that ended",
@@ -113,7 +113,7 @@ Otherwise the success event will be `endGameReceived`.
 
 The `updateScore` is used to be emitted by a `game` client to notify the server and the others clients an update with the players's scores. The event takes a JSON Object as param :
 
-```json
+```js
 // updateScore param
 {
   game_name: "Name of the game to update",
@@ -130,7 +130,7 @@ Otherwise the success event will be `updateScoreReceived`.
 
 The `addWindEvent` is used to be emitted by `mobileApp` clients to disrupt the game with a wind effect. The event takes a JSON object as param :
 
-```json
+```js
 // addWindEvent param
 {
   gameName: "Name of the game to disrupt",
@@ -143,7 +143,7 @@ The `mobileApp` client which emitted the event will receive the event `actionAdd
 
 Then all the clients of type `game` will received the event `actionEvent` with a JSON object as param containing all the informations about the wind action. 
 
-```json
+```js
 // actionEvent params
 {
   actionType : 1,
