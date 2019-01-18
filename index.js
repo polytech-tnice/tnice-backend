@@ -12,6 +12,8 @@ var Client = require("./_models/client");
 var ClientName = require("./_models/client-name");
 var ClientManager = require("./utils/client-manager");
 var ActionPhaseHelper = require('./utils/action-phase-helper');
+var ErrorCode = require("./_models/error-codes");
+var SuccessCode = require("./_models/success-codes");
 
 const clientManager = new ClientManager();
 const games = [];
@@ -127,7 +129,7 @@ io.on("connection", function (socket) {
 
     games.forEach((game) => {
       if (game.getName() === gameName && game.getGameState() === GameState.IN_PROGRESS) {
-        canCreateGame = false;
+        canUpdateGame = false;
         return;
       }
 
@@ -141,7 +143,7 @@ io.on("connection", function (socket) {
       return;
     }
 
-    socket.emit('success', { desc: 'Partie correctement lancée' })
+    socket.emit('success', { code: 'gameLaunchSuccess', desc: 'Partie correctement lancée' })
     clientManager.getClientsOfType(ClientName.GAME).forEach(c => {
       c.getSocket().emit('gameLaunched', { name: gameName });
     })
