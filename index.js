@@ -2,6 +2,7 @@ var app = require("express")();
 var http = require("http").Server(app);
 var io = require("socket.io")(http, { transports: ["polling", "websocket"] });
 var ActionType = require("./_models/actions/action-type");
+var ActionPhaseStep = require('./_models/actions/action-phase-step');
 var WindAction = require("./_models/actions/action");
 var ActionManager = require("./utils/action-manager");
 var Player = require("./_models/player");
@@ -131,6 +132,7 @@ io.on("connection", function (socket) {
 
       if (game.getName() === gameName) {
         game.setGameState(GameState.IN_PROGRESS);
+        game.setActionPhaseStep(ActionPhaseStep.CREATION); // Set the action phase to CREATION when starting the game...
       }
     });
     if (!canUpdateGame) {
