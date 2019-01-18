@@ -1,0 +1,9 @@
+module.exports = SuccessCodesEnum = Object.freeze({
+  "AUTH_SUCCESS": 1,
+  "INIT_GAME_SUCCESS": 2,
+  "LAUNCH_GAME_SUCCESS": 3,
+  "JOIN_GAME_SUCCESS": 4,
+  "END_GAME_SUCCESS": 5,
+  "UPDATE_SCORE_SUCCESS": 6,
+  "ACTION_ADDED_SUCCESS": 7
+})
