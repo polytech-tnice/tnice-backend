@@ -1,8 +1,8 @@
 var app = require("express")();
 var http = require("http").Server(app);
 var io = require("socket.io")(http, { transports: ["polling", "websocket"] });
-var ActionType = require("./_models/action-type");
-var WindAction = require("./_models/action");
+var ActionType = require("./_models/actions/action-type");
+var WindAction = require("./_models/actions/action");
 var ActionManager = require("./utils/action-manager");
 var Player = require("./_models/player");
 var Game = require("./_models/game");

@@ -17,6 +17,14 @@ module.exports = class Game {
         this.actionManager = actionManager;
     }
 
+    setActionPhaseStep(step) {
+        this.step = step;
+    }
+
+    getActionManager() {
+        return this.step;
+    }
+
     setGameState(state) {
         this.status = state;
     }
