@@ -194,6 +194,7 @@ io.on("connection", function (socket) {
       if (game.getName() === params.game_name) {
         game.playerOneScore = params.player1_score;
         game.playerTwoScore = params.player2_score;
+        game.status = GameState.INTERUPTED;
         res = game;
         isAdded = true;
       }
