@@ -2,7 +2,16 @@
 
 Backend of the T-Nice project
 
+##### Table of contents
+
+1. [Getting Started](#gettingStarted)
+2. [Connection to the server](#connectToServer)
+3. [Basic T-Nice Workflow](#tNiceWorkflow)
+4. [Error codes](#errorCodes)
+5. [Success codes](#successCodes)
+
 ## Getting started
+<a name="gettingStarted"></a>
 
 ```bash
 # install dependencies
@@ -14,12 +23,15 @@ nodemon index.js or node index.js
 ```
 
 ## Connection to the server
+<a name="connectToServer"></a>
 
 Depends on the langage you are using, you may need to install and configure [socket.io ](https://socket.io/) in your project. If your client is not on the same machine than the server, socket.io will need your ip address or server adress where the client is to reach it (ipaddress:3000).
 
 Then you will be able to listen events from the server with `socket.on` and send ones with `socket.emit` (this may change with the language used, please refers to proper documentation).
 
 ## Basic T-Nice workflow
+<a name="tNiceWorkflow"></a>
+
 (All the codes shown here will be in `javascript`)
 
 ### Event connect
@@ -156,6 +168,28 @@ Then all the clients of type `game` will received the event `actionEvent` with a
 * `1` for Wind action
 * `2` for unknown one
 
+
+
+## Error codes
+<a name="errorCodes"></a>
+
+* `1` (CLIENT_ALREADY_REGISTERED) : Send when a client emitted the event `authentication` and he is already registered 
+* `2` (CLIENT_NAME_UNKNOWN) : Send when a client name given as param of an event not exist
+* `3` (GAME_ALREADY_EXISTING) : Send when a client emitted the event `initGame` but a game with the name given is already registered by the server
+* `4` (GAME_NOT_EXISTING) : Send when the name of a game given as param of an event not exist in the server
+* `5` (GAME_ALREADY_IN_PROGRESS) : Send when a client try to launch a game which is already in progress
+* `6` (CLIENT_ALREADY_IN_GAME) : Send when a client try to join a game where he is already in
+
+## Success codes
+<a name="successCodes"></a>
+
+* `1` (AUTH_SUCCESS) : The authentication was successful
+* `2` (INIT_GAME_SUCCESS) : The initialization of the game was successful
+* `3` (LAUNCH_GAME_SUCCESS) : The game was successfully launched
+* `4` (JOIN_GAME_SUCCESS) : The client has successfully joined the game
+* `5` (END_GAME_SUCCESS) :  The game ended successfully
+* `6` (UPDATE_SCORE_SUCCESS) :  The score was successfully updated
+* `7` (ACTION_ADDED_SUCCESS) :  The action was successfully added
 
 
 
