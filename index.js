@@ -133,6 +133,7 @@ io.on("connection", function (socket) {
   socket.on('launchGame', (launchParams) => {
     const gameName = launchParams.name;
     let canUpdateGame = true;
+    let gameData;
 
     const find = games.find(game => game.getName() === gameName);
     if (!find) {
@@ -149,6 +150,7 @@ io.on("connection", function (socket) {
       if (game.getName() === gameName) {
         game.setGameState(GameState.IN_PROGRESS);
         game.setActionPhaseStep(ActionPhaseStep.CREATION); // Set the action phase to CREATION when starting the game...
+        gameData = game;
       }
     });
     if (!canUpdateGame) {
@@ -156,7 +158,7 @@ io.on("connection", function (socket) {
       return;
     }
 
-    socket.emit('success', { code: SuccessCode.LAUNCH_GAME_SUCCESS, desc: 'Partie correctement lancée' })
+    socket.emit('success', { code: SuccessCode.LAUNCH_GAME_SUCCESS, desc: 'Partie correctement lancée', game: gameData })
     clientManager.getClientsOfType(ClientName.GAME).forEach(c => {
       c.getSocket().emit('gameLaunched', { name: gameName });
     })
@@ -173,17 +175,17 @@ io.on("connection", function (socket) {
    */
   socket.on('joinGameEvent', (params) => {
     const gameName = params.name;
-    const hasJoined = false;
+    let hasJoined = false;
     games.forEach((game) => {
       if (game.getName() === gameName) {
         game.getConnectedClientIDs().push(socket.client.id);
-        socket.emit('success', { code: SuccessCode.JOIN_GAME_SUCCESS, desc: 'Le client a bien rejoint la partie', ...params });
+        socket.emit('joinGameEvent_success', { code: SuccessCode.JOIN_GAME_SUCCESS, desc: 'Le client a bien rejoint la partie', ...params });
         hasJoined = true;
       }
     });
 
     if (!hasJoined)
-      socket.emit('fail', { code: ErrorCode.GAME_NOT_EXISTING, desc: "Il n'existe pas de partie avec ce nom" });
+      socket.emit('joinGameEvent_fail', { code: ErrorCode.GAME_NOT_EXISTING, desc: "Il n'existe pas de partie avec ce nom" });
   });
 
 
@@ -249,10 +251,10 @@ io.on("connection", function (socket) {
       }
     });
     if (isAdded) {
-      socket.emit("success", { code: SuccessCode.UPDATE_SCORE_SUCCESS, desc: 'Scores de la partie mis à jour', params: res });
+      socket.emit("updateScore_success", { code: SuccessCode.UPDATE_SCORE_SUCCESS, desc: 'Scores de la partie mis à jour', params: {updatedGame: res} });
       io.emit("updateScore", params);
     } else {
-      socket.emit('fail', { code: ErrorCode.GAME_NOT_EXISTING, desc: "La partie n'existe pas" })
+      socket.emit('updateScore_fail', { code: ErrorCode.GAME_NOT_EXISTING, desc: "La partie n'existe pas" })
     }
 
   });
@@ -280,7 +282,7 @@ io.on("connection", function (socket) {
   socket.on("addWindEvent", function (obj) {
 
     console.log(obj);
-    const gameNotFound = true;
+    let gameNotFound = true;
     const actionProvided = new WindAction(ActionType.WIND, obj.speed, obj.direction);
     games.forEach((game) => {
       if (game.getName() !== obj.gameName) return;
@@ -292,6 +294,8 @@ io.on("connection", function (socket) {
         clientManager.getClientsOfType(ClientName.MOBILEAPP).forEach(client => {
           client.socket.emit('actionAddedSuccessfully', { action: actionProvided, creator: socket.client.id });
         });
+        // Emit event to confirm that event has been added to the client who created the action
+        socket.emit('actionHasBeenAdded');
         // Event to confirm the action has been added.
         socket.emit('success', { code: SuccessCode.ACTION_ADDED_SUCCESS, desc: "Action de vent prise en compte" });
         clientManager.getClientsOfType(ClientName.GAME).forEach(client => {
