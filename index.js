@@ -281,18 +281,18 @@ io.on("connection", function (socket) {
    */
   socket.on("addWindEvent", function (obj) {
 
-    console.log(obj);
     let gameNotFound = true;
-    const actionProvided = new WindAction(ActionType.WIND, obj.speed, obj.direction);
+    const actionProvided = new WindAction(ActionType.WIND, socket.client.id, obj.speed, obj.direction);
     games.forEach((game) => {
       if (game.getName() !== obj.gameName) return;
 
       if (game.getGameState() === GameState.INTERUPTED) {
         gameNotFound = false;
         game.getActionManager().addAction(actionProvided);
+        console.log(`Action provided by ${actionProvided.creatorID}...`)
         // Emit the event to all the sockets connected
         clientManager.getClientsOfType(ClientName.MOBILEAPP).forEach(client => {
-          client.socket.emit('actionAddedSuccessfully', { action: actionProvided, creator: socket.client.id });
+          client.socket.emit('actionAddedSuccessfully', { action: actionProvided });
         });
         // Emit event to confirm that event has been added to the client who created the action
         socket.emit('actionHasBeenAdded');
