@@ -34,6 +34,19 @@ app.get("/api/games", (req, res) => {
   res.send({ games: games })
 });
 
+// Endpoint to get the list of actions for a game
+app.get("/api/game/:name/actions", (req, res) => {
+  const name = req.params.name;
+  games.forEach((game) => {
+    if (game.getName() === name) {
+      console.log('Game found...');
+      const actions = game.getActionManager().getActions();
+      res.send({actions: actions});
+    }
+  });
+  res.send({errorCode: 404, errorDescription: 'Game not found...'});
+});
+
 /**
  * Quand un client se connecte au serveur
  * @param socket - La socket correspondant au client qui vient de se connecter
@@ -158,7 +171,7 @@ io.on("connection", function (socket) {
       return;
     }
 
-    socket.emit('success', { code: SuccessCode.LAUNCH_GAME_SUCCESS, desc: 'Partie correctement lancée', game: gameData })
+    socket.emit('launchGame_success', { code: SuccessCode.LAUNCH_GAME_SUCCESS, desc: 'Partie correctement lancée', game: gameData })
     clientManager.getClientsOfType(ClientName.GAME).forEach(c => {
       c.getSocket().emit('gameLaunched', { name: gameName });
     })
@@ -179,7 +192,7 @@ io.on("connection", function (socket) {
     games.forEach((game) => {
       if (game.getName() === gameName) {
         game.getConnectedClientIDs().push(socket.client.id);
-        socket.emit('joinGameEvent_success', { code: SuccessCode.JOIN_GAME_SUCCESS, desc: 'Le client a bien rejoint la partie', ...params });
+        socket.emit('joinGameEvent_success', { code: SuccessCode.JOIN_GAME_SUCCESS, desc: 'Le client a bien rejoint la partie', game: game });
         hasJoined = true;
       }
     });
@@ -246,6 +259,9 @@ io.on("connection", function (socket) {
         game.playerOneScore = params.player1_score;
         game.playerTwoScore = params.player2_score;
         game.status = GameState.INTERUPTED;
+        // Start CREATION, VOTE and RESULT actions phase
+        startActionPhase(socket, game);
+        //game.step = ActionPhaseStep.CREATION;
         res = game;
         isAdded = true;
       }
@@ -319,3 +335,46 @@ io.on("connection", function (socket) {
 http.listen(3000, function () {
   console.log("listening on *:3000");
 });
+
+/**
+ * Function to start the action phase
+ * The function will automatically call another function to change the step of the action phase
+ * depending on the duration of each step defined in the `ActionPhaseHelper`
+ * @param {Socket} socket 
+ * @param {game} any
+ */
+function startActionPhase(socket, game) {
+  const createPhaseDuration = ActionPhaseHelper.Duration(ActionPhaseStep.CREATION);
+  const votePhaseDuration = ActionPhaseHelper.Duration(ActionPhaseStep.VOTE);
+  const resultPhaseDuration = ActionPhaseHelper.Duration(ActionPhaseStep.RESULTS);
+  changeActionStep(socket, ActionPhaseStep.CREATION, game);
+  setTimeout(() => {
+    changeActionStep(socket, ActionPhaseStep.VOTE, game);
+    setTimeout(() => {
+      changeActionStep(socket, ActionPhaseStep.RESULTS, game);
+      setTimeout(() => {
+        console.log('fin de la phase de result, la partie peut continuer...')
+      }, resultPhaseDuration*1000)
+    }, votePhaseDuration*1000)
+  }, createPhaseDuration*1000);
+  
+}
+
+/**
+ * This function set the state `actionStep` to the `game` and then emit an event through the `socket` 
+ * to all the mobile app clients
+ * @param {Socket} socket 
+ * @param {ActionPhaseStep} actionStep 
+ * @param {any} game 
+ * 
+ * @Event
+ * `actionStepUpdated` is the event sent to all the mobile app clients and in the payload there is the new step
+ */
+function changeActionStep(socket, actionStep, game) {
+  console.log(`Ancien step: ${game.step}, nouveau step: ${actionStep}!`)
+  if (!(actionStep && game)) return;
+  game.setActionPhaseStep(actionStep);
+  clientManager.getClientsOfType(ClientName.MOBILEAPP).forEach(c => {
+    c.emit('actionStepUpdated', {step: game.step});
+  });
+}
