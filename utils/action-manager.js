@@ -3,6 +3,7 @@ module.exports = class ActionManager {
     constructor() {
         this.actions = [];
         this.socketIDs = [];
+        this.lastExecutedAction = null;
     }
 
     getActions() {
@@ -40,6 +41,7 @@ module.exports = class ActionManager {
     }
 
     bestAction() {
+        if (this.actions.length === 0) return null;
         let bestAction = this.actions[0];
         for (let index = 1; index < this.actions.length; index++) {
             const action = this.actions[index];
@@ -49,8 +51,20 @@ module.exports = class ActionManager {
         }
         // Vider la liste des sockets ID qui ont vote pour la prochaine session de vote
         this.socketIDs.length = 0;
-        console.log(this.socketIDs.length);
+        // Vider la liste des actions 
+        this.socketIDs.length = 0;
         return bestAction;
+    }
+
+    saveLastExecutedAction(action) {
+        if (action === null) return;
+        console.log(`On sauvegarde l'action...`);
+        this.lastExecutedAction = action;
+        console.log(this.lastExecutedAction);
+    }
+
+    getLastExecutedAction() {
+        return this.lastExecutedAction;
     }
 
 }

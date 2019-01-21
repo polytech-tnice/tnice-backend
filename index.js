@@ -398,13 +398,13 @@ io.on("connection", function (socket) {
         // Emit event to confirm that event has been added to the client who created the action
         socket.emit('actionHasBeenAdded');
         // Event to confirm the action has been added.
-        socket.emit('success', {
+        /*socket.emit('success', {
           code: SuccessCode.ACTION_ADDED_SUCCESS,
           desc: "Action de vent prise en compte"
         });
         clientManager.getClientsOfType(ClientName.GAME).forEach(client => {
           client.socket.emit('actionEvent', actionProvided.getObject())
-        })
+        })*/
       }
     });
 
@@ -444,13 +444,33 @@ function startActionPhase(socket, game) {
     setTimeout(() => {
       changeActionStep(socket, ActionPhaseStep.RESULTS, game);
       const bestAction = game.getActionManager().bestAction();
+      game.getActionManager().saveLastExecutedAction(bestAction);
       clientManager.getClientsOfType(ClientName.MOBILEAPP).forEach(client => {
-        client.socket.emit('resultOfVoteEvent', {
-          action: bestAction
-        });
+        if (bestAction === null) {
+          client.socket.emit('fail_resultOfVoteEvent');
+        } else {
+          client.socket.emit('resultOfVoteEvent', {
+            action: bestAction
+          });
+        }
       });
       setTimeout(() => {
-        console.log('fin de la phase de result, la partie peut continuer...');
+        const action = game.getActionManager().getLastExecutedAction();
+        if (action === null) {
+          console.log(`Pas d'envoi de l'action vers Unity... (car aucune action)`);
+        } else {
+          console.log(`Envoi de l'action vers Unity...`);
+          // Envoi de l'action vers le serveur Unity pour l'appliquer au jeu
+          clientManager.getClientsOfType(ClientName.GAME).forEach(client => {
+            client.socket.emit('actionEvent', action.getObject());
+          });
+          // On repasse en mode IN_PROGRESS pour la partie
+          game.setGameState(GameState.IN_PROGRESS);
+          // On indique aux clients mobile que la partie reprend
+          clientManager.getClientsOfType(ClientName.MOBILEAPP).forEach(client => {
+            client.socket.emit('updateGameState', {state: game.getGameState()});
+          });
+        }
       }, resultPhaseDuration * 1000)
     }, votePhaseDuration * 1000)
   }, createPhaseDuration * 1000);
