@@ -1,6 +1,8 @@
 var app = require("express")();
 var http = require("http").Server(app);
-var io = require("socket.io")(http, { transports: ["polling", "websocket"] });
+var io = require("socket.io")(http, {
+  transports: ["polling", "websocket"]
+});
 var ActionType = require("./_models/actions/action-type");
 var ActionPhaseStep = require('./_models/actions/action-phase-step');
 var WindAction = require("./_models/actions/action");
@@ -31,7 +33,34 @@ app.get("/", function (req, res) {
 // Endpoint to have the list of games
 app.get("/api/games", (req, res) => {
   console.log('Using api/games endpoint...');
-  res.send({ games: games })
+  res.send({
+    games: games
+  })
+});
+
+// Endpoint to vote for an action
+// The params are name (game name) and id (creatorID of the action)
+app.get("/api/game/:name/vote/action/:creatorID/user/:userID", (req, res) => {
+  console.log('in API endpoint to vote');
+  const name = req.params.name;
+  const creatorID = req.params.creatorID;
+  const userID = req.params.userID;
+  games.forEach((game) => {
+    if (game.getName() === name) {
+      const hasVoted = game.getActionManager().voteActionOf(creatorID);
+      if (hasVoted) {
+        res.send({
+          code: 200,
+          desc: 'Votre vote est pris en compte !'
+        });
+      } else {
+        res.send({
+          code: 403,
+          desc: 'Vous ne pouvez plus voter...'
+        });
+      }
+    }
+  });
 });
 
 // Endpoint to get the list of actions for a game
@@ -39,12 +68,16 @@ app.get("/api/game/:name/actions", (req, res) => {
   const name = req.params.name;
   games.forEach((game) => {
     if (game.getName() === name) {
-      console.log('Game found...');
       const actions = game.getActionManager().getActions();
-      res.send({actions: actions});
+      res.send({
+        actions: actions
+      });
     }
   });
-  res.send({errorCode: 404, errorDescription: 'Game not found...'});
+  res.send({
+    errorCode: 404,
+    errorDescription: 'Game not found...'
+  });
 });
 
 /**
@@ -86,7 +119,10 @@ io.on("connection", function (socket) {
     const client = new Client(socket, authParams.name);
     clientManager.addClient(client);
 
-    socket.emit('success', { code: SuccessCode.AUTH_SUCCESS, desc: 'Authentification complétée' })
+    socket.emit('success', {
+      code: SuccessCode.AUTH_SUCCESS,
+      desc: 'Authentification complétée'
+    })
   });
 
   /**
@@ -111,7 +147,10 @@ io.on("connection", function (socket) {
     if (!canCreateGame) {
       // A game with the same name already exists
       // TODO - send a proper event with ERROR CODE that can be used in front-end
-      socket.emit('fail', { code: ErrorCode.GAME_ALREADY_EXISTING, desc: 'Une partie existe déjà avec ce nom' })
+      socket.emit('fail', {
+        code: ErrorCode.GAME_ALREADY_EXISTING,
+        desc: 'Une partie existe déjà avec ce nom'
+      })
       return;
     }
 
@@ -126,7 +165,10 @@ io.on("connection", function (socket) {
     games.push(createdGame);
     console.log(`Game created by: ${socket.client.id}`)
     // Emit an event to say that the game has been initialized correctly
-    socket.emit("success", { code: SuccessCode.INIT_GAME_SUCCESS, desc: 'Partie crée' });
+    socket.emit("success", {
+      code: SuccessCode.INIT_GAME_SUCCESS,
+      desc: 'Partie crée'
+    });
     io.emit("initGame", createdGame);
   });
 
@@ -150,7 +192,10 @@ io.on("connection", function (socket) {
 
     const find = games.find(game => game.getName() === gameName);
     if (!find) {
-      socket.emit('fail', { code: ErrorCode.GAME_NOT_EXISTING, desc: "La partie n'existe pas" })
+      socket.emit('fail', {
+        code: ErrorCode.GAME_NOT_EXISTING,
+        desc: "La partie n'existe pas"
+      })
       return;
     }
 
@@ -167,13 +212,22 @@ io.on("connection", function (socket) {
       }
     });
     if (!canUpdateGame) {
-      socket.emit('fail', { code: ErrorCode.GAME_ALREADY_IN_PROGRESS, desc: 'Une partie est déjà en cours avec ce nom' })
+      socket.emit('fail', {
+        code: ErrorCode.GAME_ALREADY_IN_PROGRESS,
+        desc: 'Une partie est déjà en cours avec ce nom'
+      })
       return;
     }
 
-    socket.emit('launchGame_success', { code: SuccessCode.LAUNCH_GAME_SUCCESS, desc: 'Partie correctement lancée', game: gameData })
+    socket.emit('launchGame_success', {
+      code: SuccessCode.LAUNCH_GAME_SUCCESS,
+      desc: 'Partie correctement lancée',
+      game: gameData
+    })
     clientManager.getClientsOfType(ClientName.GAME).forEach(c => {
-      c.getSocket().emit('gameLaunched', { name: gameName });
+      c.getSocket().emit('gameLaunched', {
+        name: gameName
+      });
     })
   })
 
@@ -192,13 +246,20 @@ io.on("connection", function (socket) {
     games.forEach((game) => {
       if (game.getName() === gameName) {
         game.getConnectedClientIDs().push(socket.client.id);
-        socket.emit('joinGameEvent_success', { code: SuccessCode.JOIN_GAME_SUCCESS, desc: 'Le client a bien rejoint la partie', game: game });
+        socket.emit('joinGameEvent_success', {
+          code: SuccessCode.JOIN_GAME_SUCCESS,
+          desc: 'Le client a bien rejoint la partie',
+          game: game
+        });
         hasJoined = true;
       }
     });
 
     if (!hasJoined)
-      socket.emit('joinGameEvent_fail', { code: ErrorCode.GAME_NOT_EXISTING, desc: "Il n'existe pas de partie avec ce nom" });
+      socket.emit('joinGameEvent_fail', {
+        code: ErrorCode.GAME_NOT_EXISTING,
+        desc: "Il n'existe pas de partie avec ce nom"
+      });
   });
 
 
@@ -229,10 +290,16 @@ io.on("connection", function (socket) {
       }
     });
     if (isAdded) {
-      socket.emit("success", { code: SuccessCode.END_GAME_SUCCESS, desc: "Partie terminée" });
+      socket.emit("success", {
+        code: SuccessCode.END_GAME_SUCCESS,
+        desc: "Partie terminée"
+      });
       io.emit("endGame", params);
     } else {
-      socket.emit('fail', { code: ErrorCode.GAME_NOT_EXISTING, desc: "La partie n'existe pas" })
+      socket.emit('fail', {
+        code: ErrorCode.GAME_NOT_EXISTING,
+        desc: "La partie n'existe pas"
+      })
     }
   });
 
@@ -259,18 +326,26 @@ io.on("connection", function (socket) {
         game.playerOneScore = params.player1_score;
         game.playerTwoScore = params.player2_score;
         game.status = GameState.INTERUPTED;
-        // Start CREATION, VOTE and RESULT actions phase
+        game.step = ActionPhaseStep.CREATION;
         startActionPhase(socket, game);
-        //game.step = ActionPhaseStep.CREATION;
         res = game;
         isAdded = true;
       }
     });
     if (isAdded) {
-      socket.emit("updateScore_success", { code: SuccessCode.UPDATE_SCORE_SUCCESS, desc: 'Scores de la partie mis à jour', params: {updatedGame: res} });
+      socket.emit("updateScore_success", {
+        code: SuccessCode.UPDATE_SCORE_SUCCESS,
+        desc: 'Scores de la partie mis à jour',
+        params: {
+          updatedGame: res
+        }
+      });
       io.emit("updateScore", params);
     } else {
-      socket.emit('updateScore_fail', { code: ErrorCode.GAME_NOT_EXISTING, desc: "La partie n'existe pas" })
+      socket.emit('updateScore_fail', {
+        code: ErrorCode.GAME_NOT_EXISTING,
+        desc: "La partie n'existe pas"
+      })
     }
 
   });
@@ -308,12 +383,17 @@ io.on("connection", function (socket) {
         console.log(`Action provided by ${actionProvided.creatorID}...`)
         // Emit the event to all the sockets connected
         clientManager.getClientsOfType(ClientName.MOBILEAPP).forEach(client => {
-          client.socket.emit('actionAddedSuccessfully', { action: actionProvided });
+          client.socket.emit('actionAddedSuccessfully', {
+            action: actionProvided
+          });
         });
         // Emit event to confirm that event has been added to the client who created the action
         socket.emit('actionHasBeenAdded');
         // Event to confirm the action has been added.
-        socket.emit('success', { code: SuccessCode.ACTION_ADDED_SUCCESS, desc: "Action de vent prise en compte" });
+        socket.emit('success', {
+          code: SuccessCode.ACTION_ADDED_SUCCESS,
+          desc: "Action de vent prise en compte"
+        });
         clientManager.getClientsOfType(ClientName.GAME).forEach(client => {
           client.socket.emit('actionEvent', actionProvided.getObject())
         })
@@ -321,7 +401,10 @@ io.on("connection", function (socket) {
     });
 
     if (gameNotFound) {
-      socket.emit('fail', { code: ErrorCode.GAME_NOT_EXISTING, desc: "La partie n'existe pas" })
+      socket.emit('fail', {
+        code: ErrorCode.GAME_NOT_EXISTING,
+        desc: "La partie n'existe pas"
+      })
     }
   });
 
@@ -353,11 +436,11 @@ function startActionPhase(socket, game) {
     setTimeout(() => {
       changeActionStep(socket, ActionPhaseStep.RESULTS, game);
       setTimeout(() => {
-        console.log('fin de la phase de result, la partie peut continuer...')
-      }, resultPhaseDuration*1000)
-    }, votePhaseDuration*1000)
-  }, createPhaseDuration*1000);
-  
+        console.log('fin de la phase de result, la partie peut continuer...');
+      }, resultPhaseDuration * 1000)
+    }, votePhaseDuration * 1000)
+  }, createPhaseDuration * 1000);
+
 }
 
 /**
@@ -374,7 +457,7 @@ function changeActionStep(socket, actionStep, game) {
   console.log(`Ancien step: ${game.step}, nouveau step: ${actionStep}!`)
   if (!(actionStep && game)) return;
   game.setActionPhaseStep(actionStep);
-  clientManager.getClientsOfType(ClientName.MOBILEAPP).forEach(c => {
-    c.emit('actionStepUpdated', {step: game.step});
+  socket.emit('actionStepUpdated', {
+    step: game.step
   });
 }

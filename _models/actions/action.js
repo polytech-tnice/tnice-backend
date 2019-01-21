@@ -6,6 +6,7 @@ class Action {
     constructor(actionType, creatorID) {
         this.actionType = actionType;
         this.creatorID = creatorID;
+        this.voteCount = 0;
     }
 
     getActionType() {
@@ -14,6 +15,14 @@ class Action {
 
     getCreatorID() {
         return this.creatorID;
+    }
+
+    getVoteCount() {
+        return this.voteCount;
+    }
+
+    addVote() {
+        this.voteCount += 1;
     }
 
 }

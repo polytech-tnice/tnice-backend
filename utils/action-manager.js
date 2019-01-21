@@ -2,6 +2,7 @@ module.exports = class ActionManager {
 
     constructor() {
         this.actions = [];
+        this.socketIDs = [];
     }
 
     getActions() {
@@ -15,6 +16,27 @@ module.exports = class ActionManager {
 
     addAction(action) {
         this.actions.push(action);
+    }
+
+    hasVoted(socketID) {
+        let hasVoted = false;
+        this.socketIDs.forEach(id => {
+            if (id === socketID) {
+                hasVoted = true;
+            }
+        });
+        return hasVoted;
+    }
+
+    voteActionOf(creatorID, socketID) {
+        if (this.hasVoted(socketID)) return false;
+        this.actions.forEach((action) => {
+            if (action.getCreatorID() === creatorID) {
+                action.addVote();
+                this.socketIDs.push(socketID);
+            }
+        });
+        return true;
     }
 
 }
