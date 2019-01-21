@@ -215,7 +215,7 @@ io.on("connection", function (socket) {
 
       if (game.getName() === gameName) {
         game.setGameState(GameState.IN_PROGRESS);
-        game.setActionPhaseStep(ActionPhaseStep.CREATION); // Set the action phase to CREATION when starting the game...
+        game.setActionPhaseStep(ActionPhaseStep.WAITING); // Set the action phase to WAITING when starting the game...
         gameData = game;
       }
     });
@@ -397,14 +397,6 @@ io.on("connection", function (socket) {
         });
         // Emit event to confirm that event has been added to the client who created the action
         socket.emit('actionHasBeenAdded');
-        // Event to confirm the action has been added.
-        /*socket.emit('success', {
-          code: SuccessCode.ACTION_ADDED_SUCCESS,
-          desc: "Action de vent prise en compte"
-        });
-        clientManager.getClientsOfType(ClientName.GAME).forEach(client => {
-          client.socket.emit('actionEvent', actionProvided.getObject())
-        })*/
       }
     });
 
@@ -455,6 +447,7 @@ function startActionPhase(socket, game) {
         }
       });
       setTimeout(() => {
+        changeActionStep(socket, ActionPhaseStep.WAITING, game);
         const action = game.getActionManager().getLastExecutedAction();
         if (action === null) {
           console.log(`Pas d'envoi de l'action vers Unity... (car aucune action)`);
