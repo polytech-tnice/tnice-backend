@@ -45,22 +45,30 @@ app.get("/api/game/:name/vote/action/:creatorID/user/:userID", (req, res) => {
   const name = req.params.name;
   const creatorID = req.params.creatorID;
   const userID = req.params.userID;
-  games.forEach((game) => {
-    if (game.getName() === name) {
-      const hasVoted = game.getActionManager().voteActionOf(creatorID);
-      if (hasVoted) {
-        res.send({
-          code: 200,
-          desc: 'Votre vote est pris en compte !'
-        });
-      } else {
-        res.send({
-          code: 403,
-          desc: 'Vous ne pouvez plus voter...'
-        });
+  // On regarde si l'ID de l'user qui tente de voter est l'ID du createur de l'action
+  if (userID === creatorID) {
+    res.send({
+      code: 403,
+      desc: 'Vous ne pouvez pas voter pour votre action...'
+    })
+  } else {
+    games.forEach((game) => {
+      if (game.getName() === name) {
+        const hasVoted = game.getActionManager().voteActionOf(creatorID);
+        if (hasVoted) {
+          res.send({
+            code: 200,
+            desc: 'Votre vote est pris en compte !'
+          });
+        } else {
+          res.send({
+            code: 403,
+            desc: 'Vous ne pouvez plus voter...'
+          });
+        }
       }
-    }
-  });
+    });
+  }
 });
 
 // Endpoint to get the list of actions for a game
@@ -435,6 +443,12 @@ function startActionPhase(socket, game) {
     changeActionStep(socket, ActionPhaseStep.VOTE, game);
     setTimeout(() => {
       changeActionStep(socket, ActionPhaseStep.RESULTS, game);
+      const bestAction = game.getActionManager().bestAction();
+      clientManager.getClientsOfType(ClientName.MOBILEAPP).forEach(client => {
+        client.socket.emit('resultOfVoteEvent', {
+          action: bestAction
+        });
+      });
       setTimeout(() => {
         console.log('fin de la phase de result, la partie peut continuer...');
       }, resultPhaseDuration * 1000)

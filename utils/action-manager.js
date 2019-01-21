@@ -39,4 +39,18 @@ module.exports = class ActionManager {
         return true;
     }
 
+    bestAction() {
+        let bestAction = this.actions[0];
+        for (let index = 1; index < this.actions.length; index++) {
+            const action = this.actions[index];
+            if (action.getVoteCount() > bestAction.getVoteCount()) {
+                bestAction = action;
+            }
+        }
+        // Vider la liste des sockets ID qui ont vote pour la prochaine session de vote
+        this.socketIDs.length = 0;
+        console.log(this.socketIDs.length);
+        return bestAction;
+    }
+
 }
