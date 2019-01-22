@@ -13,6 +13,21 @@ module.exports = class Game {
         this.playerTwoScore = 0;
     }
 
+    /**
+     * Set the action phase manager to the Game object
+     * @param {ActionPhaseManager} action_phase_manager 
+     */
+    setActionPhaseManager(action_phase_manager) {
+        this.apm = action_phase_manager;
+    }
+
+    /**
+     * Get the action phase manager of the Game object
+     */
+    getActionPhaseManager() {
+        return this.apm;
+    }
+
     setActionManager(actionManager) {
         this.actionManager = actionManager;
     }

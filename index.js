@@ -16,6 +16,7 @@ var ClientManager = require("./utils/client-manager");
 var ActionPhaseHelper = require('./utils/action-phase-helper');
 var ErrorCode = require("./_models/error-codes");
 var SuccessCode = require("./_models/success-codes");
+var ActionPhaseManager = require('./utils/action-phase-manager');
 
 const clientManager = new ClientManager();
 const games = [];
@@ -37,6 +38,21 @@ app.get("/api/games", (req, res) => {
     games: games
   })
 });
+
+app.get("/api/game/:name/state", (req, res) => {
+  console.log('In API endpoint to get the game state');
+  const name = req.params.name;
+  games.forEach(game => {
+    if (game.getName() === name) {
+      const actionPhaseManager = game.getActionPhaseManager();
+      const date = new Date();
+      const timeSpent = actionPhaseManager.timeSpent(date);
+      const remainingTime = actionPhaseManager.remainingTime(date);
+      res.send({currentStep: actionPhaseManager.step, timeSpent: timeSpent, remainingTime: remainingTime});
+    }
+  });
+  res.send({code: 404, desc: 'Game not found'});
+})
 
 // Endpoint to vote for an action
 // The params are name (game name) and id (creatorID of the action)
@@ -216,6 +232,11 @@ io.on("connection", function (socket) {
       if (game.getName() === gameName) {
         game.setGameState(GameState.IN_PROGRESS);
         game.setActionPhaseStep(ActionPhaseStep.WAITING); // Set the action phase to WAITING when starting the game...
+        // Initialize the action phase manager
+        const apm = new ActionPhaseManager(game.step, new Date());
+        console.log(apm);
+        game.setActionPhaseManager(apm);
+        console.log(game);
         gameData = game;
       }
     });
@@ -483,8 +504,12 @@ function startActionPhase(socket, game) {
 function changeActionStep(socket, actionStep, game) {
   console.log(`Ancien step: ${game.step}, nouveau step: ${actionStep}!`)
   if (!(actionStep && game)) return;
+  const apm = game.getActionPhaseManager();
+  apm.updateActionPhase(actionStep);
   game.setActionPhaseStep(actionStep);
-  socket.emit('actionStepUpdated', {
-    step: game.step
+  clientManager.getClientsOfType(ClientName.MOBILEAPP).forEach(client => {
+    client.socket.emit('actionStepUpdated', {
+      step: apm.step
+    });
   });
 }

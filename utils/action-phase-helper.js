@@ -12,6 +12,8 @@ module.exports = class ActionPhaseHelper {
             case 2: return 5;
             // RESULTS duration is 5 seconds
             case 3: return 5;
+            // WAITING duration is undefined (depending on the game)
+            case 4: return -1;
         }
     }
     
