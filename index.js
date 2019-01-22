@@ -39,6 +39,18 @@ app.get("/api/games", (req, res) => {
   })
 });
 
+app.get("/api/game/:name/actions", (req, res) => {
+  const name = req.params.name;
+  games.forEach(game => {
+    if (game.getName() === name) {
+      const actionManager = game.getActionManager();
+      const actionsSubmitted = actionManager.getActions();
+      res.send({actions: actionsSubmitted});
+    }
+  });
+  res.send({code: 404, desc: 'Game not found'});
+});
+
 app.get("/api/game/:name/state", (req, res) => {
   console.log('In API endpoint to get the game state');
   const name = req.params.name;
@@ -454,6 +466,10 @@ function startActionPhase(socket, game) {
   changeActionStep(socket, ActionPhaseStep.CREATION, game);
   setTimeout(() => {
     changeActionStep(socket, ActionPhaseStep.VOTE, game);
+    // Envoyer un event aux clients mobiles pour interompre l'action en cours
+    clientManager.getClientsOfType(ClientName.MOBILEAPP).forEach(client => {
+      client.socket.emit('stopActionCreation');
+    });
     setTimeout(() => {
       changeActionStep(socket, ActionPhaseStep.RESULTS, game);
       const bestAction = game.getActionManager().bestAction();
@@ -469,6 +485,12 @@ function startActionPhase(socket, game) {
       });
       setTimeout(() => {
         changeActionStep(socket, ActionPhaseStep.WAITING, game);
+        // Clear the action list
+        game.getActionManager().clearActions();
+        // And send an event to all the mobile clients to clear the action list
+        clientManager.getClientsOfType(ClientName.MOBILEAPP).forEach(client => {
+          client.socket.emit('clearActionList');
+        });
         const action = game.getActionManager().getLastExecutedAction();
         if (action === null) {
           console.log(`Pas d'envoi de l'action vers Unity... (car aucune action)`);
