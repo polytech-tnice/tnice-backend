@@ -39,6 +39,19 @@ app.get("/api/games", (req, res) => {
   })
 });
 
+app.get("/api/game/:name/last_executed_action", (req, res) => {
+  console.log("API to get the last executed action of a game!");
+  const name = req.params.name;
+  games.forEach(game => {
+    if (game.getName() === name) {
+      const actionManager = game.getActionManager();
+      const lastAction = actionManager.getLastExecutedAction();
+      res.send({lastExecutedAction: lastAction});
+    }
+  });
+  res.send({code: 404, desc: 'Game not found'});
+});
+
 app.get("/api/game/:name/actions", (req, res) => {
   const name = req.params.name;
   games.forEach(game => {
