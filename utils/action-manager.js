@@ -57,10 +57,7 @@ module.exports = class ActionManager {
     }
 
     saveLastExecutedAction(action) {
-        if (action === null) return;
-        console.log(`On sauvegarde l'action...`);
         this.lastExecutedAction = action;
-        console.log(this.lastExecutedAction);
     }
 
     getLastExecutedAction() {
