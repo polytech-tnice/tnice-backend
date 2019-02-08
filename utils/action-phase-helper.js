@@ -9,7 +9,7 @@ module.exports = class ActionPhaseHelper {
             // CREATION duration is 20 seconds
             case 1: return 20;
             // VOTE duration is 5 seconds
-            case 2: return 5;
+            case 2: return 10;
             // RESULTS duration is 5 seconds
             case 3: return 5;
             // WAITING duration is undefined (depending on the game)

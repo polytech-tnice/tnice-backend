@@ -36,7 +36,7 @@ app.get("/api/games", (req, res) => {
   console.log('Using api/games endpoint...');
   res.send({
     games: games
-  })
+  });
 });
 
 app.get("/api/game/:name/last_executed_action", (req, res) => {
@@ -85,7 +85,9 @@ app.get("/api/game/:name/vote/action/:creatorID/user/:userID", (req, res) => {
   console.log('in API endpoint to vote');
   const name = req.params.name;
   const creatorID = req.params.creatorID;
+  
   const userID = req.params.userID;
+  console.log(`ID ${userID} is about to vote for ${creatorID}...`);
   // On regarde si l'ID de l'user qui tente de voter est l'ID du createur de l'action
   if (userID === creatorID) {
     res.send({
@@ -189,6 +191,8 @@ io.on("connection", function (socket) {
    *    - `initGame` : la partie a bien été crée
    */
   socket.on("initGame", function (gameParams) {
+    console.log('in initGame event handler');
+
     let canCreateGame = true;
     games.forEach((game) => {
       if (game.getName() === gameParams.game_name) canCreateGame = false;
@@ -235,6 +239,7 @@ io.on("connection", function (socket) {
    *    - `gameLaunched` : la partie doit être lancée
    */
   socket.on('launchGame', (launchParams) => {
+    console.log('in launch game event handler')
     const gameName = launchParams.name;
     let canUpdateGame = true;
     let gameData;
@@ -259,9 +264,7 @@ io.on("connection", function (socket) {
         game.setActionPhaseStep(ActionPhaseStep.WAITING); // Set the action phase to WAITING when starting the game...
         // Initialize the action phase manager
         const apm = new ActionPhaseManager(game.step, new Date());
-        console.log(apm);
         game.setActionPhaseManager(apm);
-        console.log(game);
         gameData = game;
       }
     });
@@ -295,6 +298,7 @@ io.on("connection", function (socket) {
    *    - `success` avec le code `4` : le client a pu rejoindre la partie - on renvoie les infos sur la partie
    */
   socket.on('joinGameEvent', (params) => {
+    console.log('in join game event')
     const gameName = params.name;
     let hasJoined = false;
     games.forEach((game) => {

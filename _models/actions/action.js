@@ -45,7 +45,7 @@ module.exports = class WindAction extends Action {
             actionType: this.actionType,
             speed: this.speed,
             direction: this.direction,
-            creatorID: creatorID
+            creatorID: this.creatorID
         }
     }
 }
