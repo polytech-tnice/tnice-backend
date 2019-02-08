@@ -19,7 +19,7 @@ var SuccessCode = require("./_models/success-codes");
 var ActionPhaseManager = require('./utils/action-phase-manager');
 
 const clientManager = new ClientManager();
-const games = [];
+let games = [];
 
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -46,10 +46,10 @@ app.get("/api/game/:name/last_executed_action", (req, res) => {
     if (game.getName() === name) {
       const actionManager = game.getActionManager();
       const lastAction = actionManager.getLastExecutedAction();
-      res.send({lastExecutedAction: lastAction});
+      res.send({ lastExecutedAction: lastAction });
     }
   });
-  res.send({code: 404, desc: 'Game not found'});
+  res.send({ code: 404, desc: 'Game not found' });
 });
 
 app.get("/api/game/:name/actions", (req, res) => {
@@ -58,10 +58,10 @@ app.get("/api/game/:name/actions", (req, res) => {
     if (game.getName() === name) {
       const actionManager = game.getActionManager();
       const actionsSubmitted = actionManager.getActions();
-      res.send({actions: actionsSubmitted});
+      res.send({ actions: actionsSubmitted });
     }
   });
-  res.send({code: 404, desc: 'Game not found'});
+  res.send({ code: 404, desc: 'Game not found' });
 });
 
 app.get("/api/game/:name/state", (req, res) => {
@@ -73,10 +73,10 @@ app.get("/api/game/:name/state", (req, res) => {
       const date = new Date();
       const timeSpent = actionPhaseManager.timeSpent(date);
       const remainingTime = actionPhaseManager.remainingTime(date);
-      res.send({currentStep: actionPhaseManager.step, timeSpent: timeSpent, remainingTime: remainingTime});
+      res.send({ currentStep: actionPhaseManager.step, timeSpent: timeSpent, remainingTime: remainingTime });
     }
   });
-  res.send({code: 404, desc: 'Game not found'});
+  res.send({ code: 404, desc: 'Game not found' });
 })
 
 // Endpoint to vote for an action
@@ -85,7 +85,7 @@ app.get("/api/game/:name/vote/action/:creatorID/user/:userID", (req, res) => {
   console.log('in API endpoint to vote');
   const name = req.params.name;
   const creatorID = req.params.creatorID;
-  
+
   const userID = req.params.userID;
   console.log(`ID ${userID} is about to vote for ${creatorID}...`);
   // On regarde si l'ID de l'user qui tente de voter est l'ID du createur de l'action
@@ -194,18 +194,18 @@ io.on("connection", function (socket) {
     console.log('in initGame event handler');
 
     let canCreateGame = true;
-    games.forEach((game) => {
-      if (game.getName() === gameParams.game_name) canCreateGame = false;
+    games = games.filter((game) => {
+      return (game.getName() !== gameParams.game_name)
     });
-    if (!canCreateGame) {
-      // A game with the same name already exists
-      // TODO - send a proper event with ERROR CODE that can be used in front-end
-      socket.emit('fail', {
-        code: ErrorCode.GAME_ALREADY_EXISTING,
-        desc: 'Une partie existe déjà avec ce nom'
-      })
-      return;
-    }
+    // if (!canCreateGame) {
+    //   // A game with the same name already exists
+    //   // TODO - send a proper event with ERROR CODE that can be used in front-end
+    //   socket.emit('fail', {
+    //     code: ErrorCode.GAME_ALREADY_EXISTING,
+    //     desc: 'Une partie existe déjà avec ce nom'
+    //   })
+    //   return;
+    // }
 
 
     const players = [];
@@ -521,7 +521,7 @@ function startActionPhase(socket, game) {
           game.setGameState(GameState.IN_PROGRESS);
           // On indique aux clients mobile que la partie reprend
           clientManager.getClientsOfType(ClientName.MOBILEAPP).forEach(client => {
-            client.socket.emit('updateGameState', {state: game.getGameState()});
+            client.socket.emit('updateGameState', { state: game.getGameState() });
           });
         }
       }, resultPhaseDuration * 1000)
