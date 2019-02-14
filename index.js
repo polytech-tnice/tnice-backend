@@ -508,6 +508,11 @@ function startActionPhase(socket, game) {
         clientManager.getClientsOfType(ClientName.MOBILEAPP).forEach(client => {
           client.socket.emit('clearActionList');
         });
+
+        clientManager.getClientsOfType(ClientName.GAME).forEach(client => {
+          client.socket.emit('playPoint');
+        });
+
         const action = game.getActionManager().getLastExecutedAction();
         if (action === null) {
           console.log(`Pas d'envoi de l'action vers Unity... (car aucune action)`);
